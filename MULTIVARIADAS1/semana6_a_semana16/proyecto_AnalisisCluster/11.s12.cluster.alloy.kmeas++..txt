@@ -1,0 +1,112 @@
+set.seed(123)
+km <- kmeans(datosc, 
+             centers=3,      # Número de Cluster
+             iter.max = 100, # Número de iteraciones máxima
+             nstart = 25)    # Número de puntos iniciales
+
+# ntart=25, significa que se probarán 25 puntos iniciales 
+# aleatorios y luego elegirá aquel donde la variación 
+# dentro (intra) de cluster sea mínima. 
+# El valor por defecto es 1
+
+# Mostrar resumen de los clusters
+km
+
+# Sumas de cuadrados
+km$withinss     # Suma de cuadrados dentro de cada cluster
+km$tot.withinss # Suma de cuadrados Total dentro de cada cluster
+km$totss        # Suma de cuadrados total suma(cuadrado(x - media))
+km$betweenss    # Suma de cuadrados entre cluster. 
+                # Se obtiene por diferencia 
+
+# Tamaño de cada cluster
+km$size
+
+# Promedios de cada cluster 
+km$centers
+
+# Número de iteraciones
+km$iter
+#-------------------------------------------------------------------------------------------------
+
+library(dplyr)
+datosc %>% mutate(grp=km$cluster) -> datos.k
+
+# Otra forma: datos.k <- cbind(datosc,grp=factor(km$cluster))
+
+head(datos.k)
+str(datos.k)
+datos.k$grp <- factor(datos.k$grp)
+library(factoextra)
+fviz_cluster(km, data = datosc, ellipse.type = "convex") +
+  theme_classic()
+
+#Validación de los clusters
+
+#--------------------------------------------------------------------------------
+
+library(LICORS)
+set.seed(123)
+kmpp <- kmeanspp(datosc, 
+                 k=3, 
+                 start="random",
+                 nstart = 25,
+                 iter.max=100)
+
+# ntart=25, significa que R probará 25 puntos iniciales 
+# aleatorios y luego elegirá aquel donde la variación 
+# dentro de cluster sea mínima. El valor por defecto es 1
+
+# Mostrar resumen de los clusters
+kmpp
+
+# Sumas de cuadrados
+kmpp$withinss     # Suma de cuadrados dentro de cada cluster
+kmpp$tot.withinss # suma de cuadrados Total dentro de cada cluster
+kmpp$totss        # Suma de cuadrados total suma(cuadrado(x - media))
+kmpp$betweenss    # Suma de cuadrados entre cluster. 
+# Se obtiene por diferencia 
+
+# Tamaño de cada cluster
+kmpp$size
+
+# Promedios de cada cluster 
+kmpp$centers
+
+# Otra forma de obtener promedios de cada cluster
+aggregate(datosc, by=list(cluster=kmpp$cluster), mean)
+
+# Junta el archivo de datos con la columna de cluster
+datos.kpp <- cbind(datosc,grp=as.factor(kmpp$cluster))
+
+head(datos.kpp)
+str(datos.kpp)
+#------------------------------------------------------------------------------
+
+libro para suscribirme: 11:55 pm salen las publicaciones mas recientes.
+
+https://www.analyticsvidhya.com/blog/2019/08/comprehensive-guide-k-means-clustering/
+
+#-----------------------------------------------------------------------------
+
+library(factoextra)
+
+res.hk <- hkmeans(datosc, 3,
+                  hc.metric = "euclidean",
+                  hc.method = "ward.D2",
+                  iter.max = 10)
+
+# Elementos que retorna hkmeans()
+names(res.hk)
+
+# Mostrar los resultados
+res.hk
+res.hk$cluster
+
+head(cbind(datosc,cluster=res.hk$cluster))
+
+res.hk$centers
+
+res.hk$size
+
+datos.hk <- cbind(datosc,grp=as.factor(res.hk$cluster))

@@ -1,0 +1,110 @@
+rm(list = ls()) #limpiar las variables
+dev.off()#limpia graficos
+library(foreign)
+datos3 <-read.spss("ACP-cervezas.sav",
+                   use.value.labels=TRUE, 
+                   to.data.frame=TRUE)
+#################################################################################
+########################ANALISIS_EXPLORATORIO####################################
+#################################################################################
+#######ANALISIS_EXPLORATORIO_DE_LOS_DATOS
+# Quinta forma
+library(GGally)
+ggpairs(datos3)
+# Mapas de Calor
+library(GGally)
+ggcorr(datos3)
+#la correlacion entre las variables originales,se puede observar que si hay correlacion
+#en algunas variables con otras,como por ejemplo,sabor con marca , marca con precio.
+################################################################################
+###trabajaremos con la matriz correlacion,es decir estadarizamos los datos originales.
+#############################
+#############################
+library(ade4)
+acp <- dudi.pca(datos3 ,           # datos.s , scale = F
+                scannf=FALSE, #presentacion
+                scale=T, center = T,   # Matriz de Correlación
+                nf=ncol(datos3))#¿cuantos compenentes quieres quedarte?
+#en este caso lo pondre la misma cantidad de variables 
+#en otras palabras,no me hagas reduccion de dimensionalidad,
+#esto es con el fin de  corroborar con cuantas componentes nos quedaremos.
+#center = T, es decir le quitara la media y scale=T ,es decir lo dividira entre su desviacion.
+#############################
+#############################
+summary(acp)#por defecto te bota los 5 primeros autovalores.
+#############################AUTOVALORES
+acp$eig#Aqui nos bota como resultado 11 autovalores(11 variables)
+####
+2.7730895+ 1.4237074+ 1.2406015 +1.0491859 +0.8936524 +0.8626848+ 0.7755053+ 0.6247958+ 0.4986119+0.4614032 +0.3967623
+###AUTOVALORES miden la variabilidad de cada variable y la suma de todos los autovalores es 
+###igual a la variabilidad total=la cantidad de variables(11).
+###
+inertia.dudi(acp)
+###autovalores,que porcentje del total es,por ejemplo el autovalor 'ax1' es 2.7731 
+###representa 25.21% del total,es decir de la variabilidad total.
+#########################################################################################
+#########################################################################################
+#########################CRITERIO_DEL_CODO###############################################
+library(ggplot2)
+ggplot(as.data.frame(acp$eig)) + 
+  aes(x=seq(1:11),acp$eig) + 
+  geom_point(color="red") + geom_line() + theme_bw() +
+  scale_x_continuous(breaks=seq(1:11)) +
+  labs(title="Scree-Plot",
+       x= "Componentes",
+       y= "Autovalor") +
+  geom_hline(yintercept = 1,lty=2,color="blue")
+##RESULTADO:Podemos observar que se pueden utilizar 4 o 5 componentes,pero por el 
+##criterio de la media,los autovalores que sobrepasan el 1, son candidatos a explicar
+##resto de variables.
+#######################################################################################
+#######################################################################################
+#########################CRITERIO_DE_LA_MATRIZ_CORRELACION#############################
+acp$co
+####VERIFICANDO_ME_QUEDO_CON_5_COMPONENTES
+##ya que el 'comp5',porque la variable 'facilidades' es mejor explicada(-0.55413498).
+####################################################################################
+###########5_componentes############################################################
+library(ade4)
+acp <- dudi.pca(datos3 ,           # datos.s , scale = F
+                scannf=FALSE, #presentacion
+                scale=T, center = T,   # Matriz de Correlación
+                nf=5)
+inertia(acp)
+####67.09% de variabilidad
+acp$c1#5componentes
+
+##########################################################################
+##Primera forma 
+s.corcircle(acp$co,grid=FALSE)
+# Segunda forma
+library(factoextra)
+fviz_pca_var(acp)
+fviz_pca_var(acp, col.var="steelblue")+theme_minimal()
+#######################################################################
+# Representación de los individuos y componentes
+fviz_pca_biplot(acp, repel = TRUE,
+                col.var = "steelblue",
+                col.ind = "black" )
+########################################################################"
+############CONCLUSION:
+############Con el criterio de la media,parecia que eran 4 componentes,
+#pero con el criterio de los componentes necesarias que te expliquen 
+#todas la variables 'acp$co',corroboramos que eran 5 componentes, ya que 
+#la varaible 'facilidades' es mejor explicada con el 'comp5'.
+#componente1:
+#precio
+#marca
+#ofertas
+#componente2:
+#sabor
+#componente3:
+#promociones
+#lugares
+#publicidad
+#diseño
+#componente4:
+#facil
+#componente5:
+#facilidades
+#procedencia

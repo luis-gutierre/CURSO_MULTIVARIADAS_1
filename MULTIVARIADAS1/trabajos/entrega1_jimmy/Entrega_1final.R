@@ -1,0 +1,151 @@
+# Con la data que se encuentra en el siguiente link hemos desarrollado un MRLM,para estimar
+# los valores del rendimiento relativo de un Hardware.
+#https://archive.ics.uci.edu/ml/datasets/Computer+Hardware
+
+library(pacman)
+p_load(readr,carData,car,ade4,factoextra,corrplot,GGally)
+options(digits = 4)
+library(readr)
+machine <- read_csv("D:/UNALM-2020-2/MULTIVARIADAS1/trabajos/entrega1_jimmy/machine.data")
+#Asignando nombres a las columnas
+names(machine)<-c("Proveedor","Modelo","Ciclo_vida","Min","Max",
+                  "Caché","Canales_Min","Canales_Max","Ren_rela",
+                  "Ren_estim")
+machine<-as.data.frame(machine)
+
+# se tiene 9 variables :2 variables cualitativas
+#                      : 7 variables predictoras
+#                      : variable a predecir Ren_estim 
+
+attach(machine)
+
+# Trabajando con las variables predictoras numericas
+# d1 es la matriz sin escalar.
+d1<-data.frame(machine[,3:9])
+str(d1)
+# matriz de correlacion
+corre<-cor(d1)
+#library(GGally)
+ggcorr(d1)
+#Observamos que existe correlación entre las variables.
+
+
+#-------------------------
+# Estandarizando los datos
+datos.s <- scale(d1)
+acp1<- dudi.pca(datos.s,            
+                scannf=FALSE, 
+                scale=F, 
+                center = F,   
+                nf=ncol(datos.s))   
+summary(acp1)
+
+# Autovalores
+acp1$eig                    #la suma es un valor aproximado a 7
+sum(acp1$eig)                           #por trabajar con datos estandarizados
+
+# Porcentaje que cada variable aporta  
+inertia.dudi(acp1)
+# Obtenemos que al trabajar con 2 componentes
+# explicamos el 72.47% de la variación.
+
+#Correlación entre las variables y los componentes
+acp1$co
+# Obtendremos que los componentes estan conformados por:
+
+# Comp 1        |   # Comp 2
+  ---------------------------------             
+# Min           |  # Ciclo_vida
+# Max           |
+# Caché         |
+# Canales_Min   |
+# Canales_Max   |
+# Ren_rela      |
+------------------------------------
+
+#Sabemos con cuantos componentes trabajar: 2
+
+acp1<- dudi.pca(datos.s,           # scale = F
+                scannf=FALSE, 
+                scale=F, 
+                center = F,      
+                nf=2)  
+
+#Auto vectores
+acp1$c1
+# Y1 = 0.235*X1-0.397*X2-0.433*X3-0.386*X4-0.371*X5-0.328*X6-0.451*x7
+# Y2 = 0.930*X1-0.0507*X2+0.043*X3-0.004*X4+0.133*X5+0.288*X6+0.1713*X7
+
+# Por lo tanto los scores son :
+acp1$li
+
+# grafico de conponentes
+fviz_pca_var(acp1)   
+
+##Hallando el modelo de regresión lineal múltiple
+Rendimiento<-machine[,10]
+acp2<-cbind(acp1$li,Rendimiento)
+mod1<-lm (acp2$Rendimiento~acp2$Axis1+acp2$Axis2)
+summary(mod1)
+# Coeficientes:
+b0<-mod1$coefficients[1]
+b1<-mod1$coefficients[2]
+b2<-mod1$coefficients[3]
+
+# Modelo de regresión lineal múltiple:
+rend<-b0+b1*acp1$li[1]+b2*acp1$li[2]
+head(rend)
+cbind(rend,Rendimiento)
+#Los valores del lado izquierdo son los valores que esta prediciendo
+#nuestro modelo de regresión y en el lado derecho se encuentran los valores reales.
+#--------------------------------------------------------------------------------
+# verificando Multicolinealidad.
+vif(mod1)
+
+#Prediciendo con nuevos valores
+#Estandarizamos
+medias<-sapply(d1,mean)
+varianza<-sapply(d1,var)
+vc<-c(100,4000,4500,100,6,50,110) #-- valores correspondientes a cada variable. 
+vc.est<-(vc-medias)/sqrt(varianza)
+vc.est
+
+#Hallando las componentes
+# Y1 = 0.235*X1-0.397*X2-0.433*X3-0.386*X4-0.371*X5-0.328*X6-0.451*x7
+# Y2 = 0.930*X1-0.0507*X2+0.043*X3-0.004*X4+0.133*X5+0.288*X6+0.1713*X7
+
+comp<-function(a1){
+  W1=0.235*a1[1]-0.397*a1[2]-0.433*a1[3]-0.386*a1[4]-0.371*a1[5]-0.328*a1[6]-0.451*a1[7]
+  W2=0.930*a1[1]-0.0507*a1[2]+0.043*a1[3]-0.004*a1[4]+0.133*a1[5]+0.288*a1[6]+0.1713*a1[7]
+  W<-c(W1,W2)
+  return(W)
+  }
+yu<-comp(vc.est)
+names(yu)<-c("y1","y2")
+yu
+#Hallando el rendimiento estimado
+cp<-function(W1,W2){{
+    Y = 98.9-69.8*W1+28.1*W2}
+  print(Y)
+}
+r<-cp(yu[1],yu[2])
+names(r)<-("Ren_estimado")
+r
+#-----------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

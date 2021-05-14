@@ -1,0 +1,27 @@
+# CASO LUQUE
+#------------
+datos.acs<-matrix(c(30,30,155,30,130,30,80,30,30,80,30,5),ncol=3,byrow=T)
+dimnames(datos.acs)<-list(Marcas=c("A","B","C","D")
+                     ,opinion=c("Segmento 1","Segmento 2","Segmento 3"))
+
+# PAQUETE ANACOR
+#--------------
+library(anacor)
+fit2 <- anacor(datos.acs,ndim=2)
+str(fit2)
+
+summary(fit2)
+plot(fit2,plot.type="jointplot")  # Grafico Biplot
+plot(fit2)
+fit2$row.scores  # coordenadas fila
+
+# Autovectores------------------Analisis De Correspondencia Simple
+#-------------
+fit2$left.singvec
+fit2$right.singvec
+#---------------------------dashboard-----------------------------
+#-----------------------------------------------------------------------------------------------------
+# Interfaz interactiva para analizar todos los resultados
+# usando el paquete Factoshiny
+library(Factoshiny)
+PCAshiny(res.pca)

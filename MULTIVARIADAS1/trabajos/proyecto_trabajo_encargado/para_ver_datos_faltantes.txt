@@ -1,0 +1,2 @@
+library(mice)
+md.pattern(datos, rotate.names = TRUE)

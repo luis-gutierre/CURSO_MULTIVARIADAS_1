@@ -1,0 +1,70 @@
+# Junta el archivo de datos con la columna de cluster
+datos.j <- cbind(datosc,grp)
+
+
+
+
+# Diagrama de lineas de promedios por cluster
+
+library(dplyr)
+datos.j %>%                                                     
+  group_by(grp) %>%                                     #group by       :obtengo  todo lo que quiero     ->filtro
+  summarise_all(list(mean)) -> medias                   #summarise_all  :obtengo todo lo que quiero      ->filtro  "all"  refiere a "todo"
+medias                                                  # 3 x 7
+
+#remove(general)
+
+#-------------------------------------------------
+
+#2.sacar los promedios generales por variable.
+
+#forma1:
+datos.j %>%  summarise_if(is.numeric,mean) %>%         #sumarise_if  :obtengo un resumen condicionado
+  round(4) -> general
+general
+
+#forma2:
+datos.j %>% select(-grp) %>%                          #como un sql
+  summarise_all(list(mean)) -> general
+general                                               # 1 x 6 
+
+#uniendo  "grp"  y "general"  (columnas)               
+general <- cbind(grp="general",general)
+general                                               # 1 X 7
+
+#uniendo "medias" y "general" (filas) y al mismo tiempo conviertiendo en un "data.frame"
+medias  <- as.data.frame(rbind(medias,general))
+medias     
+
+# Convirtiendo la data formato tidy
+library(tidyr)
+gathered_datos.j <- gather(data  = medias,
+                           -grp,                       #pasame todas las variables(columnas) a filas  excepto la varible "grp"
+                           key   = variable, 
+                           value = valor) 
+
+gathered_datos.j
+
+
+
+
+
+######
+#######
+######
+library(ggplot2)
+
+ggplot(gathered_datos.j) + aes(x=variable,y=valor,color=grp) + 
+  geom_point() + geom_line(aes(group = grp)) +
+  theme_bw() +
+  theme(legend.position = "bottom",legend.title=element_blank()) +
+  labs(title="Diagrama de líneas de Cluster por Variable",
+       x="Variable",y="") + ylim(0,8) +
+  scale_colour_discrete("Cluster") 
+coord_flip()
+######
+#####
+######
+datos.j %>% select(-grp) %>%
+            summarise_all(list(mean)) -> general
+general

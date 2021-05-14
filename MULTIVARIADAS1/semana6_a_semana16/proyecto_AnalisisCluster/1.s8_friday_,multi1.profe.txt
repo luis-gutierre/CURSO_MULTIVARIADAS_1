@@ -1,0 +1,76 @@
+library(pacman)
+p_load(cluster,aplpack,fpc,foreign,TeachingDemos,
+       factoextra,NbClust,ape,corrplot,DataExplorer,
+       funModeling,compareGroups,tidyverse,dendextend,
+       igraph,FeatureImpCluster,flexclust,LICORS)
+#------------
+library(foreign)
+datosc <- read.spss("compras-cluster.sav",
+                    use.value.labels=TRUE, 
+                    max.value.labels=TRUE,
+                    to.data.frame=TRUE)
+
+attr(datosc,"variable.labels") <- NULL
+datosc$caso <- NULL
+str(datosc)
+#--------------
+plot_str(datosc)
+
+# Detectando y graficando los % de datos perdidos
+plot_missing(datosc,ggtheme=theme_minimal()) 
+
+# Histograma para las variables numéricas
+plot_histogram(datosc)
+
+plot_density(datosc)
+
+create_report(datosc)
+
+#-------------------------------------------------------------
+library(funModeling) # Pablo Casas  Libro Vivo de Ciencia de Datos
+# Udemy R tidyverse
+
+# Descripción de los datos
+df_status(datosc)
+
+# Gráfico de variables numéricas
+plot_num(datosc)
+
+# Descripción de las variables numéricas
+profiling_num(datosc)
+#-----------------------------------------------------
+datos.e <- as.data.frame(scale(datosc))
+
+str(datos.e)
+#----------------------------------------------------
+# 1.a Calculando la matriz de distancia euclidiana 
+#     con la funcion dist()
+dist.eucl <- dist(datosc, method = "euclidean")
+
+# Visualizando un subconjunto de la matriz de distancia
+round(as.matrix(dist.eucl)[1:6, 1:6], 1)
+
+# Otras distancias: "maximum", "manhattan", "minkowski"
+
+#-------------------------------------------------------------
+# 1.b Calculando la matriz de distancia euclidiana 
+#     con la función daisy()
+
+library(cluster)
+dist.eucl2 <- daisy(datosc, metric= "euclidean")
+
+# Visualizando un subconjunto de la matriz de distancia
+round(as.matrix(dist.eucl2)[1:6, 1:6], 1)
+
+# Otras distancias: "gower", "manhattan"
+
+# 1.c Calculando la matriz de distancia euclidiana con la
+#     funcion get_dist()
+library(factoextra)
+res.dist <- get_dist(datosc, stand = FALSE, 
+                     method = "euclidean")
+
+# Visualizando un subconjunto de la matriz de distancia
+round(as.matrix(res.dist)[1:6, 1:6], 1)
+
+# Otras distancias: "pearson", "kendall", "spearman"

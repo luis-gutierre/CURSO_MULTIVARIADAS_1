@@ -1,0 +1,1012 @@
+#https://bookdown.org/jsalinas/tecnicas_multivariadas/ad.html
+options(scipen=999)      # Eliminar la notación científica
+options(digits = 3)      # Número de decimales
+library(pacman)
+p_load(MASS, dplyr, ggplot2, klaR, psych, gains, caret, Boruta, gmodels,vegan, MLmetrics, vcd, Epi, InformationValue,ROCit)
+#
+Patrimonio   <- c(1.3,3.7,5,5.9,7.1,4,7.9,5.1,5.2,9.8,9,12,6.3,8.7,11.1,9.9)
+Deuda        <- c(4.1,6.9,3,6.5,5.4,2.7,7.6,3.8,1,4.2,4.8,2,5.2,1.1,4.1,1.6)
+Grupo        <- c(1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0)
+
+datosd <- data.frame(Patrimonio,Deuda,Grupo)
+str(datosd)
+#
+datosd$Grupo <- factor(datosd$Grupo,levels=c(0,1),
+                       labels=c("NoFallido","Fallido"))
+getwd()
+# No Fallido: no moroso (0)
+# Fallido: deudor (1)
+
+#write.csv(datosd,"data fallidos.txt",row.names = F)
+contrasts(datosd$Grupo)
+#Fallido
+#NoFallido       0     fracaso    #VAMOS ASUMIR   HAY UUNA REGLA PRA LA HIPOTESIS
+#Fallido         1     exito
+
+#EL_RSTUDIO:probalidad(fallido)
+str(datosd)
+
+prop.table(table(datosd$Grupo)) # Data Balanceada
+#NoFallido   Fallido 
+#0.5       0.5 
+
+#GRAFICA DE PUNTOS DE LA VARIABLE PATRIMONIO Y LA VARIABLE DEUDA
+library(ggplot2)
+ggplot(datosd) + aes(x=Patrimonio,y=Deuda,color=Grupo) + 
+  geom_point()  + 
+  scale_x_continuous(breaks=seq(0,12,2)) +
+  scale_y_continuous(breaks=seq(0,8,1)) + 
+  theme_bw() +
+  theme(panel.grid = element_blank())
+
+#
+#
+#
+#------------------------------------------------------------------
+
+############
+#PATRIMONIO#
+############
+
+tapply(datosd$Patrimonio,datosd$Grupo,mean)
+
+C1 <- (5+9)/2  ; C1
+
+datosd$clase.pred1 <- ifelse(datosd$Patrimonio<C1,1,0)
+datosd$clase.pred1 <- factor(datosd$clase.pred1,levels = c(0,1),
+                             labels = c("NoFallido","Fallido"))
+#matriz de confusion
+table(Clase_Real=datosd$Grupo,
+      Clase_Predicha=datosd$clase.pred1)
+
+datosd$Grupo
+cbind(datosd$Grupo,datosd$clase.pred1)
+mean(datosd$Grupo==datosd$clase.pred1) # Accuracy: porcentaje de acierto
+
+mean(datosd$Grupo!=datosd$clase.pred1) # Tasa de error del modelo
+
+ggplot(datosd) + aes(x=Patrimonio,fill=Grupo) + 
+  geom_histogram(alpha = 0.25, position="identity") +
+  theme_bw() + 
+  geom_vline(xintercept = C1, linetype = "longdash") +
+  scale_x_continuous(breaks = seq(0,13,1))
+#------------------------------------------------------------------
+
+#######
+#DEUDA#
+#######
+
+
+tapply(datosd$Deuda,datosd$Grupo,mean)
+
+C2 <- (3+5)/2  ; C2 #4
+
+datosd$clase.pred2 <- ifelse(datosd$Deuda>C2,1,0)
+datosd$clase.pred2 <- factor(datosd$clase.pred2,levels=c(0,1),
+                             labels=c("NoFallido","Fallido"))
+
+table(Clase_Real=datosd$Grupo,
+      Clase_Predicha=datosd$clase.pred2)
+
+cbind(datosd$Grupo,datosd$clase.pred2)
+mean(datosd$Grupo==datosd$clase.pred2) # Accuracy
+
+mean(datosd$Grupo!=datosd$clase.pred2) # Tasa de error
+
+ggplot(datosd) + aes(x=Deuda,fill=Grupo) + 
+  geom_histogram(alpha = 0.25, position="identity") +
+  theme_bw() + 
+  geom_vline(xintercept = C2, linetype = "longdash") +
+  scale_x_continuous(breaks = seq(0,8,1))
+
+########################################################### 
+#3.Clasificacion con dos grupos y dos variable predictoras#
+###########################################################
+
+library(MASS)
+modelo <- lda(Grupo ~ Patrimonio + Deuda,datosd)
+
+str(modelo)
+
+modelo
+
+modelo$means
+
+# Usando el modelo
+datosd$D <- -0.422*datosd$Patrimonio + 0.380*datosd$Deuda 
+
+mean(datosd$D)
+
+tapply(datosd$D,datosd$Grupo,mean)
+
+C3 <- (-2.66-0.21)/2  ; C3
+
+datosd$clase.pred3 <- ifelse(datosd$D>C3,1,0)
+datosd$clase.pred3 <- factor(datosd$clase.pred3,levels=c(0,1),
+                             labels=c("NoFallido","Fallido"))
+
+table(Clase_Real=datosd$Grupo,
+      Clase_Predicha=datosd$clase.pred3)
+##tabla _ poderosa # tabla de confusion
+
+tabla=table(Clase_Real=datosd$Grupo,
+            Clase_Predicha=datosd$clase.pred3)
+
+addmargins(tabla)
+#               Clase_Predicha
+#Clase_Real  NoFallido Fallido Sum
+#NoFallido         7       1   8
+#Fallido           0       8   8
+#Sum               7       9  16
+
+mean(datosd$Grupo==datosd$clase.pred3)# Accuracy: porcentaje de acierto
+
+mean(datosd$Grupo!=datosd$clase.pred3)# Tasa de error del modelo
+
+ggplot(datosd) + aes(x=D,fill=Grupo) + 
+  geom_histogram(alpha = 0.25, position="identity") +
+  theme_bw() + 
+  geom_vline(xintercept = C3, linetype = "longdash") +
+  scale_x_continuous(breaks = seq(-5,5,1))
+
+#NOTA.-
+#datosd3$D= -0.42249*datosd$Patrimonio + 0.38022*datosd$Deuda
+#C3=-1.4365
+#ifelse(datosd$D>c3,1,0)
+#D-c3>0
+#-0.42249*Patrimonio +0.38022$Deuda + 1.43465>0
+#------------------------------------------------------------------
+#forma1
+datosd$dif <- datosd$D - C3            #paso a paso
+datosd$dif
+# [1]  2.4444  2.4956  0.4650  1.4152  0.4908  0.7730  0.9892  0.7268 -0.3794 -1.1046 -0.5390 -2.8690  0.7524 -1.8184 -1.6912
+#[16] -2.1348
+
+#forma2
+predicciones <- predict(modelo)        #forma rapida
+predicciones
+str(predicciones)
+
+#1   2.4462261
+#2   2.4968690
+#3   0.4647612
+#4   1.4152977
+#5   0.4900625
+#6   0.7731863
+#7   0.9885588
+#8   0.7266901
+#9  -0.3801825
+#10 -1.1069328
+#11 -0.5408057
+#12 -2.8729048
+#13  0.7520115
+#14 -1.8208819
+#15 -1.6941946
+#16 -2.1377609
+
+##################################
+#forma1 y forma2 son equivalentes#
+##################################
+
+
+#------------------------------------------------------------------
+
+# Igual a la diferencia de D y C3  #ifelse(datosd$D-C3>0,1,0)  
+#AYUDA VISUALIZAR SI SON POSITIVOS LA ETIQUETA SERA fallido
+#AYUDA VISUALIZAR SI SON NEGATIVOS LA ETIQUETA SERA nofallido
+predicciones$x
+#1   2.4462261
+#2   2.4968690
+#3   0.4647612
+#4   1.4152977
+#5   0.4900625
+#.
+#.
+#16  -2.1377609
+
+cbind(predicciones$x,datosd$dif)   #hecho con el modelo  "predicciones$x" , hecho paso a paso  "datosd$dif"
+plot(modelo)
+#-----------------------------------------
+# Otra forma #HITOGRAMA
+ldahist(data = predicciones$x, g = datosd$Grupo)
+#-----------------------------------------
+#GRAFICA DE BARRITAS
+ggplot(datosd) + aes(x=dif,fill=Grupo) + 
+  geom_histogram(alpha = 0.25, position="identity") +
+  theme_bw() + 
+  geom_vline(xintercept = 0, linetype = "longdash") +
+  scale_x_continuous(breaks = seq(-5,5,1))
+#-----------------------------------------
+#-----------------------------------------
+#-----------------------------------------
+#-----------------------------------------
+
+############
+#IMPORTANTE#
+############
+
+##########################################################
+#el 0 siempre va ser la condicion normal                 #
+#el 1 el cambio es el que se escapa de ese grupo normal  #
+##########################################################
+
+#EJEMPLO_1
+#A una persona a cual yo le preste dinero termino 
+#siendo morosa
+
+#EJEMPLO_2
+#A un cliente a cual yo le suscribe dandole una buena promocion
+#termino fugando de la empresa 
+
+
+#lo que ami me interesa de esas 2 probalidades
+#es la probalidad de fallidos
+
+
+
+
+
+predicciones$posterior               #SE ELIGE EL MAYOR 
+#NoFallido      Fallido
+#1  0.002486811 0.9975131890         #AL PRIMER INDIVIDUO LO VA A PREDECIR COMO FALLIDO
+#2  0.002197226 0.9978027741
+#3  0.242530318 0.7574696815
+#4  0.030234699 0.9697653007
+#5  0.231323058 0.7686769420
+#6  0.130717952 0.8692820481
+#7  0.081482154 0.9185178455
+#8  0.144217853 0.8557821467
+#9  0.717400615 0.2825993848        #AL NOVENO INDIVIDUO LO VA PREDECIR COMO NOFALLIDO
+#10 0.937756867 0.0622431333
+#11 0.790045099 0.2099549005
+#12 0.999124468 0.0008755318
+#13 0.136727709 0.8632722914
+#14 0.988591388 0.0114086116
+#15 0.984502783 0.0154972169
+#16 0.994719274 0.0052807262
+datosd$proba <- predicciones$posterior[,2]   #ELIGO LA SEGUNDA COLUMNA PORQUE ES MI EXITO (FALLIDO)
+
+
+predicciones$class # Punto de corte por defecto= 0.5 (umbral)
+#[1] Fallido   Fallido   Fallido   Fallido   Fallido   Fallido   Fallido   Fallido   NoFallido NoFallido NoFallido NoFallido
+#[13] Fallido   NoFallido NoFallido NoFallido
+
+cbind(predicciones$posterior,predicciones$class)
+#   NoFallido      Fallido  
+#1  0.002486811 0.9975131890 2
+#2  0.002197226 0.9978027741 2
+#3  0.242530318 0.7574696815 2
+#4  0.030234699 0.9697653007 2
+#5  0.231323058 0.7686769420 2
+#6  0.130717952 0.8692820481 2
+#7  0.081482154 0.9185178455 2
+#8  0.144217853 0.8557821467 2
+#9  0.717400615 0.2825993848 1
+#10 0.937756867 0.0622431333 1
+#11 0.790045099 0.2099549005 1
+#12 0.999124468 0.0008755318 1
+#13 0.136727709 0.8632722914 2
+#14 0.988591388 0.0114086116 1
+#15 0.984502783 0.0154972169 1
+#16 0.994719274 0.0052807262 1
+
+#--------------------------------------------------------
+#--------------------------------------------------------
+#--------------------------------------------------------
+#--------------------------------------------------------
+#--------------------------------------------------------
+#Con función de densidad
+ggplot(datosd) + aes(x=proba,color= Grupo,fill=Grupo) + 
+  geom_density(alpha = 0.25) + theme_bw() + 
+  geom_vline(xintercept = 0.5, linetype = "longdash") + theme_bw()
+
+#Con histograma
+ggplot(datosd) + aes(x=proba,color= Grupo,fill=Grupo) + 
+  geom_histogram(alpha = 0.25) + theme_bw() + 
+  geom_vline(xintercept = 0.5, linetype = "longdash") + theme_bw()
+
+cbind(GrupoReal=datosd$Grupo,predicciones$posterior,GrupoPredicho=predicciones$class)
+#GrupoReal   NoFallido      Fallido GrupoPredicho
+#1          2 0.002486811 0.9975131890             2
+#2          2 0.002197226 0.9978027741             2
+#3          2 0.242530318 0.7574696815             2
+#4          2 0.030234699 0.9697653007             2
+#5          2 0.231323058 0.7686769420             2
+#6          2 0.130717952 0.8692820481             2
+#7          2 0.081482154 0.9185178455             2
+#8          2 0.144217853 0.8557821467             2
+#9          1 0.717400615 0.2825993848             1
+#10         1 0.937756867 0.0622431333             1
+#11         1 0.790045099 0.2099549005             1
+#12         1 0.999124468 0.0008755318             1
+#13         1 0.136727709 0.8632722914             2
+#14         1 0.988591388 0.0114086116             1
+#15         1 0.984502783 0.0154972169             1
+#16         1 0.994719274 0.0052807262             1
+
+#--------------------------------------------------------
+#--------------------------------------------------------
+#--------------------------------------------------------
+#GRAFICA DE PUNTOS DE LA VARIABLE PATRIMONIO Y LA VARIABLE DEUDA
+library(ggplot2)
+ggplot(datosd) + aes(x=Patrimonio,y=Deuda,color=Grupo) + 
+  geom_point()  + 
+  scale_x_continuous(breaks=seq(0,12,2)) +
+  scale_y_continuous(breaks=seq(0,8,1)) + 
+  theme_bw() +
+  theme(panel.grid = element_blank())
+
+
+#Usar solo para 2 variables
+library(klaR)
+
+# Análisis discriminante lineal
+partimat(Grupo ~ Deuda + Patrimonio, data = datosd, method = "lda")
+
+# Análisis discriminante cuadratico
+partimat(Grupo ~ Deuda + Patrimonio, data = datosd, method = "qda")
+
+#PREDICIENDO NUEVOS INDIVIDUOS 
+
+Patrimonio <- c(10.1,9.7)
+Deuda      <- c(6.8,2.2)
+
+nuevos.casos <- data.frame(Patrimonio,Deuda)
+#     Patrimonio Deuda
+#1       10.1   6.8
+#2        9.7   2.2
+nuevas.predicciones <- predict(modelo,nuevos.casos)
+nuevas.predicciones$posterior
+
+nuevas.predicciones$class
+nuevos.casos 
+#           Patrimonio Deuda
+#1              10.1   6.8
+#2              9.7   2.2
+#
+#cliente1       10.1   6.8
+#cliente2       9.7   2.2
+
+#---------------------------------------------------------
+
+#modelo <- lda(Grupo ~ Patrimonio + Deuda,datosd)
+
+#Group means:
+#               Patrimonio Deuda
+#NoFallido          9     3
+#Fallido            5     5
+
+#---------------------------------------------------------
+
+#Usando el Criterio de la Distancia de Mahalanobis
+#Caso general
+nuevos.casos <- data.frame(Patrimonio=1,Deuda=4)
+nuevos.casos
+
+cov_nf <- by(datosd[,c(1,2)],datosd$Grupo,cov)[[1]]
+cov_nf # matriz varianza-covarianza de los no fallidos
+
+cov_f  <- by(datosd[,c(1,2)],datosd$Grupo,cov)[[2]]
+cov_f  # matriz varianza-covarianza de los fallidos
+
+cov <- (7*cov_nf + 7*cov_f)/(14) #14 es el total de aciertos
+cov                              #7 y 7 se reparte de forma proporcional
+
+library(dplyr)
+datosd %>%  select(Patrimonio,Deuda,Grupo) %>% 
+  group_by(Grupo) %>%
+  summarise_if(is.numeric,mean) %>% as.data.frame-> centroides
+centroides
+#       Grupo  Patrimonio Deuda
+#1   NoFallido        9     3
+#2   Fallido          5     5         #9+5=14
+
+
+#Distancia del individuo a los No Fallidos
+centroides_nf <- as.matrix(centroides[1,-1]); centroides_nf
+#Patrimonio Deuda
+#       9     3
+solve(cov)
+#            Patrimonio       Deuda
+#Patrimonio  0.22436797 -0.06890388
+#Deuda      -0.06890388  0.32804348
+
+#------------------------------------------------------------
+
+#nuevos.casos
+#Patrimonio Deuda
+#       1     4
+
+#centroides_nf
+#Patrimonio Deuda
+#       9     3
+
+as.matrix(nuevos.casos-centroides_nf)%*%solve(cov)%*%
+  t(as.matrix(nuevos.casos-centroides_nf))
+#15.79006
+
+# De Otra Forma
+mahalanobis(nuevos.casos, centroides_nf, cov)  
+#15.79006     # esla distncia del individuo al grupo de los NoFallidos
+############################################################
+############################################################
+############################################################
+############################################################
+############################################################
+############################################################
+#47:00
+
+#Distancia del individuo a los Fallidos
+
+centroides_f <- as.matrix(centroides[2,-1]); centroides_f
+
+as.matrix(nuevos.casos-centroides_f)%*%solve(cov)%*%
+  t(as.matrix(nuevos.casos-centroides_f))
+
+# Otra Forma 
+mahalanobis(nuevos.casos, centroides_f, cov)
+
+#------------------------------------------------------------
+
+#7.2.2 Ejemplo 2. Ejemplo Suscripción
+#Este ejemplo fue tomado del libro de Uriel.
+
+#Uriel,E. y Aldas, J. (2002). Análisis Multivariante Aplicado. 
+#Aplicaciones al marketing, investigación de mercados, economía, 
+#dirección de empresas y turismo. Ediciones Paraninfo
+
+#Ingreso de Datos
+
+#La compañía de cable edita y promociona una revista de cine (de edición mensual) 
+#a un grupo (442) de sus suscriptores durante 6 meses. Al cabo de dicho periodo 
+#le ofrece la posibilidad de suscribirse a dicha revista. 
+#De los 442 clientes a los que se ofreció la promoción, 
+#se suscribieron a la revista 329 y no se suscribieron 113.
+
+
+#p_load(psych, MASS, klaR, gains, caret, Boruta, gmodels,vegan,
+#       MLmetrics, vcd, Epi, InformationValue, ROCit)
+
+#################################################################################################
+#################################################################################################
+#################################################################################################
+#################################################################################################
+library(foreign)
+datosd <- read.spss("suscripcion-discriminante.sav",
+                    use.value.labels=TRUE, 
+                    max.value.labels=TRUE,
+                    to.data.frame=TRUE)
+attr(datosd,"variable.labels") <- NULL # para quitar las variables names
+str(datosd)
+
+datosd$Suscripcion <- factor(datosd$Suscripcion)
+datosd$Suscripcion <- factor(datosd$Suscripcion,
+                             levels=c(0,1),
+                             labels=c("No","Si"))
+#h0:"0" PERSONAS QUE NO SE SUSCRIBIERON      (NORMAL)
+#h1:"1" PERSONAS QUE SI SE SUSCRIBIERON       (RARO)
+contrasts(datosd$Suscripcion)
+#    Si
+#No  0    
+#Si  1    representa q si suscriban (exito)  "que yo RECHAZE la hiportesis planteada"
+
+#H0: no suscribieron
+#H1: si se suscribieron
+
+#---------------------------------------------------------------------------------------
+
+#1 es lo que se estudia(alterna),si afirmamos el 1 ,rechazamos la H0 ES DECIR EL  0. 
+
+# 1.  Actual ()                    0    vs Fuga ()                       1#             
+# 2.  Aprobado ()                  0    vs Desaprobado () + Éxito        1
+# 3.  Con virus ()                 1    vs Sin Virus ()                  0#
+# 4.  Moroso ()                    1    vs No Moroso ()                  0
+# 5.  Fraude ()                    1    vs No Fraude ()                  0
+# 6.  No tiene cáncer ()           0    vs Si tiene cáncer ()            1
+# 7.  Está embarazada ()           1    vs No está embarazada ()         0#
+# 8.  Culpable ()                  1    vs Inocente ()                   0#
+# 9.  Termina universidad ()       0    vs Abandona universidad ()       1#
+# 10. Segunda vuelta Candidato A () vs Candidato B ()                    indistinto
+
+#---------------------------------------------------------------------------------------
+
+
+
+
+
+
+str(datosd)
+attach(datosd)
+
+datosd$Suscripcion <- relevel(datosd$Suscripcion, ref="No") # El 0 ES LA SITUACION NORMAL
+contrasts(datosd$Suscripcion)
+#  Si
+#No  0
+#Si  1   #vamos a estudiar a los que si se suscribieron
+
+#Explorando las variables predictoras
+library(funModeling)       # Pablo Casas Udemy
+
+###################################################### 
+################IMPORTANTE############################
+######################################################
+#names(datosd)     #TODOS LOS NOMBRES QUE HAY EN MIS "datosd"
+#"Educacion"      "Edad"           "Tvdiario"       "Organizaciones" "Hijos"          "Suscripcion" 
+
+
+#--------------------------------------------------------------
+# Reduciendo el código
+
+#la fx "setdiff" quitale el target "Suscripcion"(NO LO VA ELIMINAR), lo guarda en el objeto predictores
+
+#predictores <- setdiff(names(datosd), "Suscripcion")
+#predictores
+#target=datosd$Suscripcion
+#"Educacion"      "Edad"           "Tvdiario"       "Organizaciones" "Hijos"  
+
+
+#FORMAS DE CREAR UN MODELO
+
+#lda(Suscripcion~.,datosd)                       #clasica Y ~ .
+
+#lda(datosd[,predictores],datosd[,Suscripcion])  #otra forma (nivel Dios)
+#lda(datosd[,predictores],datosd[,target])        # 
+
+
+#BUENA COMBIANACION
+predictores <- setdiff(names(datosd), "Suscripcion")
+predictores
+target=datosd$Suscripcion
+
+library(MASS)
+lda(datosd[,predictores],datosd[,target])
+
+#--------------------------------------------------------------
+#predictores
+#"Educacion"      "Edad"           "Tvdiario"       "Organizaciones" "Hijos"
+
+
+# Boxplot por cada variable predictora vs target
+plotar(datosd, target = "Suscripcion", input = predictores,
+       plot_type = "boxplot")
+
+
+
+#DISCRETIZACION
+#cuando la v.predictora es numerica ------>categorica
+
+# Gráfico de Barras Apilado en proporción por cada variable predictora vs target
+cross_plot(datosd, 
+           input=predictores, 
+           target="Suscripcion",
+           plot_type = "percentual") #both  #quantity
+
+#----------------------------------------------------------------------------------------
+
+
+# Media por cada variable predictora vs. target
+tapply(Educacion,Suscripcion,mean)
+
+#otra forma
+
+library(dplyr)
+datosd %>% group_by(Suscripcion) %>% summarize(mean(Educacion))
+
+tapply(Edad,Suscripcion,mean)
+tapply(Tvdiario,Suscripcion,mean)
+tapply(Organizaciones,Suscripcion,mean)
+tapply(Hijos,Suscripcion,mean)
+
+#Si las diferencias de las medias son muy lejanas mi lambda de wilks va ser significativo,en otras 
+#palabras entra en mi modelo la variable (se puede realizar la prueba de t,para corroborar lo dicho)
+
+########################
+#Selección de variables#
+########################
+
+########### 
+#criterio1#
+###########
+
+# Criterio de lambda de Wilks para selección de variables
+library(klaR)
+greedy.wilks(Suscripcion ~ .,data=datosd)
+#Suscripcion ~ Edad + Educacion + Tvdiario     #QUEDATE CON 3 variables predictoras.
+
+########### 
+#criterio2#
+###########
+
+#seleccion de variables con la libreria boruta
+library(Boruta)#esta basado en  radom forest ,varaibles sombras(variables fictisias)
+set.seed(123)
+boruta=Boruta(Suscripcion~.,data=datosd,doTrace=2)
+boruta
+#4 attributes confirmed important: Edad, Educacion, Hijos, Tvdiario;
+#boruta me dice trabajar con 4 variables predictoras
+
+#CONCLUSION: greedy.wilks :Suscripcion ~ Edad + Educacion + Tvdiario      (3 variables predictoras)
+#            boruta       :Suscripcion ~ Edad, Educacion, Hijos, Tvdiario (4 variables predictoras)
+
+#grafico de boruta (4 variables predictoras)
+plot(boruta,cex.axis=0.5)
+
+
+
+
+#División de la Muestra y Modelamiento
+
+# Distribución de individuos en el target
+prop.table(table(datosd$Suscripcion))
+
+# Selección de muestra de entrenamiento (80%)
+library(ggplot2)
+library(caret)
+set.seed(123) 
+index <- createDataPartition(datosd$Suscripcion, 
+                             p=0.8, 
+                             list=FALSE)
+tail(index)
+
+training <- datosd[ index, ]  # 355 datos
+testing  <- datosd[-index, ]  # 87 datos
+
+# Verificando la estructura de los datos particionados
+prop.table(table(datosd$Suscripcion))
+
+prop.table(table(training$Suscripcion)) #en la data de entrenamiento
+prop.table(table(testing$Suscripcion))
+
+#Estimación de la Función Discriminante Lineal
+modelo.training <- lda(Suscripcion ~ Educacion + Edad + Tvdiario,
+                       training,
+                       prior=c(1,1)/2)
+
+str(modelo.training)
+
+modelo.training
+
+# valor de la función discriminante menos el punto de corte
+modelo.values <- predict(modelo.training) 
+modelo.values$x
+
+modelo.values$posterior # predicción de la probabilidad
+
+modelo.values$class # predicción de la clase
+
+
+#Clasificación y probabilidades de las observaciones
+#Probabilidad predicha
+
+proba.pred  <- predict(modelo.training,testing[,-6])$posterior
+# estoy quitando la columna suscripcion
+head(proba.pred,10)
+
+
+ldahist(data = modelo.values$x[,1], g=training$Suscripcion)
+
+testing$proba.pred <- proba.pred[,2]
+head(testing$proba.pred,10)
+#Clase predicha (punto de corte, umbral es 0.5)
+
+
+# se aumenta una columna
+testing$clase.pred <- predict(modelo.training,testing[,-6])$class
+head(testing$clase.pred,10)
+
+# Almacenamiento de datos con clase y probabilidad predecida
+# write.csv(testing,"testing-suscripcion-adl-scores.csv")
+
+ggplot(testing) + aes(x = proba.pred, 
+                      color=Suscripcion, 
+                      fill=Suscripcion) +
+  geom_histogram(alpha = 0.25)
+
+
+ggplot(testing) + aes(x = proba.pred, 
+                      color=Suscripcion, 
+                      fill = Suscripcion) + 
+  geom_density(alpha = 0.25)
+
+
+#Modelamiento con el paquete caret
+
+# Relación de modelos en caret
+library(caret) #Classification and Regression Training
+names(getModelInfo())
+
+# Relación de hiperparámetros a ajustar de un modelo
+modelLookup(model="rpart")
+
+modelLookup(model="xgbTree")
+modelLookup(model='lda')
+
+# Aplicando el modelo con Validación Cruzada  
+RNGkind(sample.kind = "Rounding") 
+set.seed(123)
+ctrl <- trainControl(method="cv",number=10)
+
+# Contruye 11 modelos: 10 para validación cruzada y un modelo para todos los datos
+modelo_lda <- train(Suscripcion ~ Educacion + Edad + Tvdiario,
+                    data = training, 
+                    method = "lda",
+                    trControl = ctrl, 
+                    tuneLength = 5,
+                    metric="Accuracy")
+modelo_lda
+
+# Se probo con el 90% de la data de entrenamiento 
+355*0.9
+modelo_lda$finalModel
+
+# Importancia de las variables
+varImp(modelo_lda)
+
+plot(varImp(modelo_lda))
+modelo_lda$resample
+
+# Gráfico de puntos para los valores de accuracy
+dotplot(modelo_lda$resample$Accuracy)
+
+# Diagrama de cajas
+bwplot(modelo_lda$resample$Accuracy)
+
+summary(modelo_lda$resample$Accuracy)
+# También se puede analizar el Kappa
+summary(modelo_lda$resample$Kappa)
+
+
+#Indicadores para Evaluación de Modelos
+
+#1. Tabla de Clasificación / Matriz de Confusión
+
+library(gmodels)
+CrossTable(x = testing$Suscripcion, 
+           y = testing$clase.pred,
+           prop.t=FALSE, 
+           prop.c=FALSE, 
+           prop.r=FALSE,
+           prop.chisq = FALSE)
+
+# Otra Forma
+addmargins(table(Clase_Real=testing$Suscripcion,
+                 Clase_Predicha=testing$clase.pred))
+
+prop.table(table(Clase_Real=testing$Suscripcion,
+                 Clase_Predicha=testing$clase.pred),1)
+
+vcd::mosaic(testing$clase.pred~testing$Suscripcion)
+
+# Calcular el accuracy
+accuracy <- mean(testing$Suscripcion==testing$clase.pred)
+accuracy
+
+# Calcular el error de mala clasificación (Tasa de error)
+error <- mean(testing$Suscripcion!=testing$clase.pred)
+error
+
+# Usando el paquete caret
+library(caret)
+cm <- caret::confusionMatrix(testing$clase.pred,
+                             testing$Suscripcion,
+                             positive="Si")
+cm
+
+cm$table
+
+cm$byClass["Sensitivity"] 
+cm$byClass["Specificity"] 
+cm$overall["Accuracy"]
+precision <- cm$byClass['Pos Pred Value']  ; precision
+# Sensibilidad
+recall <- cm$byClass['Sensitivity']  ; recall
+
+# F1 score
+# De Forma Manual
+f_measure <- 2*((precision*recall)/(precision+recall));f_measure
+
+library(MLmetrics)
+Precision(testing$Suscripcion,testing$clase.pred,positive="Si")
+Recall(testing$Suscripcion,testing$clase.pred,positive="Si")
+F1_Score(testing$Suscripcion,testing$clase.pred,positive="Si")
+
+
+
+#2. Estadístico de Kappa
+
+# Tabla de Clasificación
+addmargins(table(Clase_Real=testing$Suscripcion,
+                 Clase_Predicha=testing$clase.pred))
+
+
+# Accuracy o Probabilidad observada
+pr_o <- (19+48)/87 ; pr_o
+
+
+# Probabilidad esperada
+pr_e <- (22/87)*(36/87) + (65/87)*(51/87) ; pr_e
+
+k <- (pr_o - pr_e)/(1 - pr_e) ; k
+
+# Estadístico de Kappa
+k <- cm$overall['Kappa'] ; k
+
+
+
+#3. Estadístico Kolmogorov - Smirnov
+
+library(InformationValue)
+
+ks_stat(testing$Suscripcion,testing$proba.pred, returnKSTable = T)
+
+
+ks_stat(testing$Suscripcion,testing$proba.pred)
+# Graficando el estadístico K-S 
+ks_plot(testing$Suscripcion,testing$proba.pred)
+
+
+library(ROCit)
+ROCit_obj <- rocit(score=testing$proba.pred,
+                   class=testing$Suscripcion)
+ksplot(ROCit_obj,legend=T,values=T)
+
+ksplot1 <- ksplot(ROCit_obj,legend=T,values=T)
+
+ksplot1$`KS Cutoff`  # punto de corte óptimo con el mayor K-S
+ksplot1$`KS stat`    # K-S al punto de corte óptimo
+
+
+#4. Curva ROC y Área bajo la Curva
+
+
+# 1. Usando el paquete caTools
+library(caTools)
+AUC <- colAUC(testing$proba.pred,testing$Suscripcion,plotROC = TRUE)
+abline(0, 1,col="red",lty=3)
+
+
+AUC 
+# 2. Usando el paquete pROC
+library(pROC)
+
+# Área bajo la curva
+roc <- roc(testing$Suscripcion,testing$proba.pred)
+roc
+
+roc$thresholds # puntos de corte que ha probado el modelo
+
+# Sensitividad para cada punto de corte
+roc$sensitivities 
+
+# Especifidad para cada punto de corte
+roc$specificities
+
+# 2da Forma
+areaROC <- auc(roc(testing$Suscripcion,testing$proba.pred)) 
+areaROC
+
+# 3era forma
+roc$auc
+
+# Gráfica curva ROC
+plot.roc(testing$Suscripcion,testing$proba.pred, 
+         xlab="1- Especificidad", legacy.axes=TRUE,
+         ylab="Sensibilidad", 
+         main = paste('Área bajo la curva =',round(areaROC,4)),
+         col="blue")
+
+
+puntos.corte <- data.frame(prob=roc$thresholds,
+                           sen=roc$sensitivities,
+                           esp=roc$specificities,
+                           s_e=roc$sensitivities+roc$specificities)
+head(puntos.corte)
+
+# Punto de corte óptimo (mayor sensibilidad y especificidad)
+coords(roc, "best",ret=c("threshold","specificity", "sensitivity","accuracy"))
+
+coords(roc, "best")
+plot(roc,print.thres=T)  # punto de corte, especificidad, sensibilidad
+
+
+# Graficando la Sensibilidad y Especificidad
+
+ggplot(puntos.corte, aes(x=prob)) + 
+  geom_line(aes(y=sen, color="Sensibilidad")) +
+  geom_line(aes(y=esp, color="Especificidad")) + 
+  labs(title ="Sensibilidad vs Especificidad", 
+       x="Probabilidad") +
+  scale_color_discrete(name="Indicador") +
+  geom_vline(aes(xintercept=0.2891), # punto de corte obtenido en coords
+             color="black", linetype="dashed", size=0.5) + 
+  theme_bw() + theme(line = element_blank())
+
+
+
+
+coords(roc, "best")
+# Gráficando la Sensibilidad más la Especificidad
+puntos.corte$suma <- puntos.corte$esp+puntos.corte$sen
+optimo <- which.max(puntos.corte$suma)
+optimo 
+
+# indica en orden en que se encuentra el punto optimo
+puntos.corte[optimo,]
+
+
+#5. Coeficiente de Gini
+# Calculando manualmente
+library(caTools)
+AUC <- colAUC(testing$proba.pred,
+              testing$Suscripcio,
+              plotROC=T)
+abline(0,1,col="red",lty=2)
+
+#6. Log Loss
+
+# Usando el paquete MLmetrics
+library(MLmetrics)
+# Transformar la variable CHURN a numérica
+real <- as.numeric(testing$Suscripcion)
+head(real)
+
+# Recodificar los 1 y 2 como 0 y 1 respectivamente
+real <- ifelse(real==2,1,0)
+head(real)
+
+LogLoss(testing$proba.pred,real)
+
+#Predicción para Nuevos Individuos
+#Para datos de manera individual
+
+#Educacion Edad Tvdiario 12 18 3
+nuevo1 <- data.frame(Educacion=12,Edad=18,Tvdiario=3)
+predict(modelo.training,nuevo1)$posterior
+
+
+predict(modelo.training,nuevo1)$class
+nuevo2<-data.frame(Educacion=16,Edad=22,Tvdiario=1)
+predict(modelo.training,nuevo2)$posterior
+
+predict(modelo.training,nuevo2)$class
+
+#Para un conjunto de datos
+
+
+library(foreign)
+datosn <- read.spss("suscripcion-nuevos-discriminante.sav",
+                    use.value.labels=TRUE, 
+                    max.value.labels=TRUE,
+                    to.data.frame=TRUE)
+attr(datosn,"variable.labels") <- NULL
+str(datosn)
+
+clase    <- predict(modelo.training,datosn)$class
+proba    <- predict(modelo.training,datosn)$posterior
+datonsdp <- cbind(datosn,clase,proba)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

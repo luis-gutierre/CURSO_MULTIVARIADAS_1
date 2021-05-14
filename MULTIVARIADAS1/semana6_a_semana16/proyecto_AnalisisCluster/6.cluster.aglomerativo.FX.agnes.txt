@@ -1,0 +1,36 @@
+##########
+##########AGNES#n cluster a 1 cluster
+##########
+library(foreign)
+datosc <- read.spss("compras-cluster.sav",
+                    use.value.labels=TRUE, 
+                    max.value.labels=TRUE,
+                    to.data.frame=TRUE)
+
+attr(datosc,"variable.labels") <- NULL
+datosc$caso <- NULL
+str(datosc)
+
+
+# Cluster jerárquico aglomerativo con el paquete cluster
+library(cluster)
+res.agnes <- agnes(x      = datosc,      # matriz de datos
+                   stand  = FALSE,       # estandariza los datos
+                   metric = "euclidean", # métrica de distancia
+                   method = "average"    # método de enlace
+)
+
+#atributos de "res.agnes"(todo lo que se puede sacar)
+str(res.agnes)
+
+library(factoextra)
+fviz_dend(res.agnes, cex = 0.6, k = 3)#DENDOGRAMA
+
+#ACP con CLUSTER
+grp <- cutree(res.agnes, k = 3)
+
+fviz_cluster(list(data = datosc, cluster = grp),
+             palette = c("#2E9FDF",  "#E7B800", "#FC4E07"),
+             ellipse.type = "convex", # Concentration ellipse
+             repel = F, # Avoid label overplotting (slow)
+             show.clust.cent = FALSE, ggtheme = theme_minimal())

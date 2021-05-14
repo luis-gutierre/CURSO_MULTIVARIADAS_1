@@ -1,0 +1,48 @@
+library(compareGroups)
+group   <- compareGroups(grp ~ .,data=datos.j)
+summary(group)
+
+#---------------------------------
+library(tableone)
+comparacion_medias <-CreateTableOne(data = datos.j, 
+                                   strata = "grp")
+comparacion_medias
+#---------------------------------
+
+elbow <- function(k) {
+  set.seed(123)
+  fviz_nbclust(datosc, kmeans, method = "wss",k.max=15) +
+    geom_vline(xintercept = 3, linetype = 2) +
+    labs(subtitle = "Método Elbow")
+}
+#toc()
+elbow(10)
+
+library(manipulate)
+manipulate(elbow(k),k=slider(2,20))
+###############
+#############
+# 2.1. Usando el paquete factoextra
+library(factoextra)
+
+tic()
+set.seed(123)
+fviz_nbclust(datosc, kmeans, method = "silhouette") +
+  labs(subtitle = "Silhouette method")
+toc()
+
+# 2.2. Usando la función k-means
+windows()
+library(cluster)
+
+tic()
+set.seed(123)
+diss.datos <- daisy(datosc)
+par(mfrow=c(1,3))
+for(h in 2:4){
+  clu=kmeans(datosc,h)
+  plot(silhouette(clu$cluster,diss.datos))
+}
+toc()
+
+par(mfrow=c(1,1))

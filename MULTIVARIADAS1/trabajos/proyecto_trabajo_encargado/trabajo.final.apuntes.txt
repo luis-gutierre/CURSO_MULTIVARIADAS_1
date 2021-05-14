@@ -1,0 +1,10 @@
+meses->matriz de media->cluster jerarquico->avenida,crecimiento,estiage
+
+minerales->24variables*84filas(fecha)->cluster jerarquico 
+
+analisis componentes principales(acp)
+
+1.se acp con la intecion de agrupar las variables 
+2.se acp cpor epoca(que se hallo AC), para observar que variables son mas 
+significativas.
+

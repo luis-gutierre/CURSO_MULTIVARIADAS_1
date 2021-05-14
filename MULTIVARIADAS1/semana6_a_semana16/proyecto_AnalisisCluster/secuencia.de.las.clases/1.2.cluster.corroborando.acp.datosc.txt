@@ -1,0 +1,30 @@
+
+
+
+#CORROBORANDO
+#
+#
+# Análisis de Componentes Principales con el paquete ade4
+library(ade4)
+acp <- dudi.pca(datosc,scannf=FALSE,nf=ncol(datosc))
+summary(acp)
+
+# Valores propios
+acp$eig
+
+inertia.dudi(acp)
+
+# Correlaciones entre las variables y los componentes
+acp$co[c(1,2)]
+
+# Grafica de Valores propios - ScreePlot
+library(factoextra)
+fviz_eig(acp, addlabels=TRUE, hjust = -0.3,
+         barfill="white", barcolor ="darkblue",
+         linecolor ="red") + ylim(0,80) + theme_minimal()
+
+# Scores o Puntuaciones de cada individuo
+acp$li[1:10,]
+
+# Gráfica de individuos sobre el primer plano de componentes
+s.label(acp$li,clabel=0.7,grid=FALSE,boxes=FALSE)

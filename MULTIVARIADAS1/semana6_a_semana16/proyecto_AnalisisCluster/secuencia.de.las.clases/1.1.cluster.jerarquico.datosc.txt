@@ -1,0 +1,89 @@
+NO ESTANDAARIZO PORQUE MIS VARIABLES ESTAN EN UNA ESCALA DE 1-7
+
+
+library(foreign)
+datosc <- read.spss("compras-cluster.sav",
+                    use.value.labels=TRUE, 
+                    max.value.labels=TRUE,
+                    to.data.frame=TRUE)
+
+attr(datosc,"variable.labels") <- NULL
+datosc$caso <- NULL
+str(datosc)
+
+
+d <- dist(datosc, method = "euclidean")
+res.hc <- hclust(d, method = "average" )#insumo "d":matriz distancia(euclidiana) y metodo de enlace(vinculacion promedio)
+
+# method = ward.D, ward.D2, single, complete, average, median
+#metodo de enlace mas usado:average  y ward
+
+
+str(res.hc)#en el "merge" , observamos la cantidad de etapas 1:20 (21 INDIVIDUOS)
+
+
+################################
+#HALLANDO EL NUMERO DE CLUSTER:#
+################################
+library(ggplot2)
+alturas <- data.frame(etapa=1:20,distancia=res.hc$height)
+alturas
+ggplot(alturas) + aes(x=etapa,y=distancia)  +
+  geom_point() + geom_line()  + 
+  scale_x_continuous(breaks=seq(1,20)) + 
+  geom_vline(xintercept = 18,col="red",lty=2) + 
+  theme_bw()
+
+
+
+# Dividir en 3 clusters
+grp <- cutree(res.hc, k = 3)
+grp                                                      #<-----IMPORTANTE
+
+
+############
+#DEDONGRAMA#
+############
+
+library(factoextra)
+fviz_dend(res.hc, k=3, cex = 0.5,
+          k_colors = rainbow(3),   # Colores del arco iris # "3" porque son 3 cluster 
+          color_labels_by_k = TRUE, 
+          rect=T)
+
+#########################
+#GRAFICA#ACP con CLUSTER#
+#########################
+
+#INSUMO:
+
+#"datosc"   y  "grp"
+
+library(factoextra)
+fviz_cluster(list(data = datosc, cluster = grp),
+             palette = c("#E82A27", "#3EE6DB", "#19E32A"),
+             ellipse.type = "convex", # Concentration ellipse
+             repel = T, # Avoid label overplotting (slow)
+             show.clust.cent = FALSE, ggtheme = theme_bw())
+
+#***********************************************************FIN*************************
+# Junta el archivo de datos con la columna de cluster
+datos.j <- cbind(datosc,grp)
+str(datos.j)
+
+datos.j$grp <- factor(datos.j$grp)
+str(datos.j)
+
+
+
+
+#EXPORTAR:
+
+#directorio
+getwd()
+
+#camibar directorio
+setwd(ruta)
+###library(rio)
+# export(datos.j,"datos.exportados.xlsx")
+

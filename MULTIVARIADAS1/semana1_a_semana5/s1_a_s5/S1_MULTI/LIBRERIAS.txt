@@ -1,0 +1,10 @@
+library(rgl)
+library(car)
+library(ggplot2)
+library(magick)
+library(scatterplot3d)
+library(FactoMineR)
+library(factoextra)
+library(pacman)
+p_load("MASS", "ca", "anacor","FactoMineR","vegan",
+       "gplots","vcd","graphics", "factoextra","foreign","FactoClass")

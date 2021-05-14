@@ -1,0 +1,143 @@
+############ 
+#TIDY.VERSE#
+############
+
+#exportar:
+
+#library(rio)
+#export(datos.j,"medias.xlsx" )   ...........................(datos.j)....."1.1.cluster.jerarquico.datosc"
+
+# Diagrama de lineas de promedios por cluster
+#--------------------------------------------------
+
+#1. necesito sacar los promedios por cada cluster.
+
+
+library(dplyr)
+datos.j %>%                                                     
+  group_by(grp) %>%                                     #group by       :obtengo  todo lo que quiero     ->filtro
+  summarise_all(list(mean)) -> medias                   #summarise_all  :obtengo todo lo que quiero      ->filtro  "all"  refiere a "todo"
+medias                                                  # 3 x 7
+
+#remove(general)
+
+#-------------------------------------------------
+
+#2.sacar los promedios generales por variable.
+
+#forma1:
+datos.j %>%  summarise_if(is.numeric,mean) %>%         #sumarise_if  :obtengo un resumen condicionado
+  round(4) -> general
+general
+
+#forma2:
+datos.j %>% select(-grp) %>%                          #como un sql
+  summarise_all(list(mean)) -> general
+general                                               # 1 x 6 
+
+#uniendo  "grp"  y "general"  (columnas)               
+general <- cbind(grp="general",general)
+general                                               # 1 X 7
+
+#uniendo "medias" y "general" (filas) y al mismo tiempo conviertiendo en un "data.frame"
+medias  <- as.data.frame(rbind(medias,general))
+medias                                                # 4 x 7   =  3 x 7 (medias) +  1 x 7 (general)
+
+
+#--------------------------------------------------
+
+#FORMATO TIDY 
+
+#Es cuando es cuando en las filas tienes tienes los clusters y en las columnas tienes las variables. 
+
+#      grp divertid  presupu aprovech buenacom noimport   ahorro
+#1       1 5.666667 3.666667 6.000000 3.222222 2.000000 4.000000
+#2       2 1.666667 3.000000 1.833333 3.500000 5.500000 3.333333
+#3       3 3.500000 5.500000 3.333333 6.000000 3.500000 6.000000
+#4 general 3.904762 4.000000 4.047619 4.095238 3.428571 4.380952
+
+#--------------------------------------------------------------------------------------------------
+
+#FORMATO  NO TIDY (SIRVE PARA GRAFICAR)
+
+# Otra forma con pivot_longer
+library(tidyverse)
+gathered_datos.j <- pivot_longer(data  = medias, 
+                                 -grp,
+                                 names_to = "variable",
+                                 values_to = "valor")
+
+gathered_datos.j
+
+#grp   variable valor
+#<fct> <chr>    <dbl>
+#  1 1     divertid  5.67
+#2 1     presupu   3.67
+#3 1     aprovech  6   
+#4 1     buenacom  3.22
+#5 1     noimport  2   
+#6 1     ahorro    4   
+#7 2     divertid  1.67
+#8 2     presupu   3   
+#9 2     aprovech  1.83
+#10 2     buenacom  3.5 
+# ... with 14 more rows
+
+######
+#######trabajando con la media de cada variable por cluster
+######
+
+
+#forma 1
+
+# Convirtiendo la data formato tidy
+
+library(tidyr)
+gathered_datos.j <- gather(data  = medias,
+                           -grp,                       #pasame todas las variables(columnas) a filas  excepto la varible "grp"
+                           key   = variable, 
+                           value = valor) 
+
+gathered_datos.j
+
+#forma 2
+
+# Otra forma con pivot_longer
+library(tidyverse)
+gathered_datos.j <- pivot_longer(data  = medias, 
+                                 -grp,
+                                 names_to = "variable",
+                                 values_to = "valor")
+
+gathered_datos.j
+
+#------------------------------------------------------------------------------------------
+######
+#######trabajando con la media de cada variable por cluster
+######
+
+# general :
+
+#INSUMO:   "el formato no tidy"  < > "gathered_datos.j"
+
+
+ggplot(gathered_datos.j) + aes(x=variable,y=valor,color=grp) + 
+  geom_point() + geom_line(aes(group = grp)) +
+  theme_bw() +
+  theme(legend.position = "bottom",legend.title=element_blank()) +
+  labs(title="Diagrama de líneas de Cluster por Variable",
+       x="Variable",y="") + ylim(0,8) +
+  scale_colour_discrete("Cluster") 
+coord_flip()
+#¿cuantos individuos tengo en cada grupo?
+table(datos.j$grp)
+#1 2 3 
+#9 6 6 
+round(prop.table(table(datos.j$grp)),2)
+#  1    2    3 
+#0.43 0.29 0.29 
+
+#NOTA:
+
+#hemos hecho una agrupacion de que la suma de los cuadrados dentro de los cluster sea la minima posible 
+#(cohesion)y entre cluster sea la maxima posible(separacion).

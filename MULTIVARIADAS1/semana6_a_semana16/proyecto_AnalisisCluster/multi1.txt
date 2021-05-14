@@ -1,0 +1,7 @@
+divisivos (diana,mayor distancia)
+
+1 cluster ---> n cluster
+
+aglomerativos(agnes,menor distancia)
+
+n cluster --->  1 cluster

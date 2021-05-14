@@ -1,0 +1,37 @@
+-------------------------------------------------------------
+graficar los perfil filas:
+#
+INSUMO:perfil filas¿como se llego?matrix->tabla frecuencias absolutas->perfil fila
+#antes(TIENE QUE ESTAR EN TABLAS,NUESTRA TABLA DE FRECUENCIAS ABSOLUTAS(lo convertiremos)).
+#
+objetivo:
+si los perfiles filas son similares o diferente al perfil media fila,
+para poder interpretarlo.(analisis exploratorio)
+-------------------------------------------------------------
+CHI CUADRADO:
+#
+INSUMO:NUESTRA TABLA DE FRECUENCIAS ABSOLUTAS
+-------------------------------------------------------------
+FRECUENCIAS RELATIVAS:
+#
+INSUMO:NUESTRA TABLA DE FRECUENCIAS ABSOLUTAS
+-------------------------------------------------------------
+PERFILES FILAS:
+#
+#1FORMA:
+prop.table(datos.acs, 1)
+INSUMO:MATRIX:datos.acs¿como se llego?matrix
+#2FORMA:
+prop.table(dt,margin=1)
+INSUMO:TABLA DE FRECUENCIAS ABSOLUTAS:dt¿como se llego?matrix->tabla frecuencias absolutas
+################# 
+#CODIGO PODEROSO#
+#################
+library(gmodels)
+CrossTable(datos.acs,
+           prop.t=F,  # Frecuencia Relativa
+           prop.r=F,  # Perfil Fila
+           prop.c=F,  # Perfil Columna
+           prop.chisq=T)
+#T : MOSTRAR
+#F : OCULTAR

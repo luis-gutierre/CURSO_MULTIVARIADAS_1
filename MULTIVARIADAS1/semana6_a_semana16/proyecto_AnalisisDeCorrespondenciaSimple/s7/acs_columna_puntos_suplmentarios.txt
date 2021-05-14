@@ -1,0 +1,66 @@
+############################### 
+#ACS con puntos suplementarios#ingresando en columna'ideal'
+###############################
+#             E1	E2	E3	E4	E5	E6	E7	E8	E9	Ideal
+# Precios	    16	17	18	19	16	45	15	19	18	45
+# Variedad	   8	15	18	17	27	20	 2	14	53	53
+# Rapidez	    20	20	23	21	29	20	18	19	25	29
+# Información	11	13	12	17	20	16	15	10	44	44
+# Trato	      28	25	25	22	30	26	24	22	26	30
+# Condiciones	21	21	20	24	27	22	18	21	24	27
+# Acceso	    21	21	21	23	26	15	16	18	21	26
+
+datos_s.acs <- matrix(c(16,17,18,19,16,45,15,19,18,45,
+                        8,15,18,17,27,20, 2,14,53,53,
+                        20,20,23,21,29,20,18,19,25,29,
+                        11,13,12,17,20,16,15,10,44,44,
+                        28,25,25,22,30,26,24,22,26,30,
+                        21,21,20,24,27,22,18,21,24,27,
+                        21,21,21,23,26,15,16,18,21,26),
+                      nrow=7,byrow=T)
+
+datos_s.acs
+
+# Asignación de nombres a las filas y columnas de la tabla
+dimnames(datos_s.acs)<-list(Atributos=c("Precios", "Variedad", "Rapidez", 
+                                        "Información","Trato","Condiciones","Acceso")
+                            ,Empresa=c("Empresa 1","Empresa 2","Empresa 3",
+                                       "Empresa 4","Empresa 5","Empresa 6",
+                                       "Empresa 7","Empresa 8","Empresa 9",
+                                       "Ideal"))
+datos_s.acs
+addmargins(datos_s.acs)
+#----------------------------------------------------------------------------------------
+# Prueba de Independencia Chi-Cuadrado  
+chisq.test(datos_s.acs[,-10])#no se toma en cuenta la empresa 'ideal'
+#grados libertad = (filas-1)*(columnas-1)=48
+(gl=(7-1)*(9-1))
+#--------------------------------------------------------------
+# ACS con el paquete FactoMiner   
+library(FactoMineR) 
+res.ca.s <- CA(datos_s.acs,#insumo matrix
+               ncp=2,
+               graph=FALSE,
+               col.sup = 10)#la columna suplmentario es 'ideal'
+#va hacer un analisis de correspondecia simple sin la empresa 'ideal'
+#luego va simular cuales serian sus coordenadas en la dimension que yo he decidido 
+#retener.
+#--------------------------------------------------------------
+# Scree Plot de los Autovalores
+get_eigenvalue(res.ca.s)#autovalores#91.1 % de la inercia total=0.052028+0.023084=0.0751
+autovaloes=get_eigenvalue(res.ca.s)
+sum(autovaloes[,1])#0.0824,inercia total con 6 componentes
+fviz_screeplot(res.ca.s, addlabels = TRUE, ylim = c(0, 80))#graficando los autovalores
+#--------------------------------------------------------------
+# Interpretación de los Indicadores del ACS
+summary(res.ca.s,nb.dec = 3, ncp = 2)#nb.dec=3 decimales#ncp = 2,componentes
+sum(res.ca.s$row$inertia)#0.0824,inercia total
+sum(res.ca.s$col$inertia)#0.0824,inercia total
+#--------------------------------------------------------------
+# Biplot filas, columnas y columna suplementaria
+fviz_ca_biplot(res.ca.s, repel = T) + theme_light()
+#observamos que la empresa 9 esta mas cerca a la empresa ideal,la empresa 9
+#tiene como atributos por la grafica (informacion,variedad),tendria que corroborar
+#con los indicadores.
+#la empresa 1 es lo opuesto esta muy lejano a la empresa ideal,pero tendria que corroborar
+#con los indicadores.

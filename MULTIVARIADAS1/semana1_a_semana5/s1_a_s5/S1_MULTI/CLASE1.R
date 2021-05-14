@@ -1,0 +1,101 @@
+###########################################
+#                                         #
+#  INTRODUCCI?N AL AN?LISIS MULTIVARIADO  #
+#         MG. Jesus Salinas Flores        #
+#         jsalinas@lamolina.edu.pe        #
+#                                         #
+###########################################
+
+#---------------------------------------------------------
+# Para limpiar el workspace, por si hubiera algun dataset 
+# o informacion cargada
+rm(list = ls()) #limpiar las variables
+dev.off()#limpia graficos
+# Cambiar el directorio de trabajo
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+getwd() #muestra el directorio
+##############################
+# 1. Installation de paquetes #
+##############################
+library(rgl)
+library(car)
+library(ggplot2)
+library(magick)
+library(scatterplot3d)
+library(FactoMineR)
+library(factoextra)
+library(pacman)
+p_load("MASS", "ca", "anacor","FactoMineR","vegan",
+       "gplots","vcd","graphics", "factoextra","foreign","FactoClass")
+# 2. Lectura de datos #
+#######################
+
+datos.intro <-read.csv("Ejemplo_Multivariado.csv",sep = ";",stringsAsFactors = T) #formato dataframe
+datos.intro
+str(datos.intro)
+row.names(datos.intro)=datos.intro$Empresa
+datos.intro$Empresa=NULL
+datos.intro#AHORA SI ,se encuentra en formato "tidy"
+str(datos.intro)
+attach(datos.intro)
+########################################
+# 3. Analisis Descriptivo de los datos #
+########################################
+
+#----------------------------------------
+# Analisis descriptivo univariado
+
+summary(Inversion) #resumen de la variable inversion 
+##con ggplot2
+library(ggplot2)
+ggplot(datos.intro) +aes(x=Inversion,y=0)+geom_point()+geom_text(aes(label=row.names(datos.intro)),vjust=-1)+theme_light()
+########################################
+# 4. Analisis discriptivo bivariado
+###considerando la inversion y las ventas 
+summary(Inversion)
+summary(Ventas)
+library(ggplot2)
+ggplot(datos.intro) +aes(x=Inversion,y=Ventas)+geom_point()+geom_text(aes(label=row.names(datos.intro)),vjust=-1)+
+                  geom_vline(xintercept = mean(Inversion),lty=5)+
+                  geom_hline(yintercept = mean(Ventas),lty=5)+
+                  theme_bw()
+#resumen de todo 
+summary(datos.intro)
+##forma1
+library(scatterplot3d)
+s3d=scatterplot3d(x=Inversion,y=Antig,z=Ventas,
+                  xlab = "inversion en publicidad(miles)",
+                  ylab = "antiguedad(años)",
+                  zlab = "ventas(millones)",
+                  angle = 40,
+                  color = "steelblue",
+                  pch = 20)
+text(s3d$xyz.convert(Inversion, Antig,Ventas), 
+     labels=row.names(datos.intro),
+     cex=0.8)
+##forma2 
+#INICIO
+library(rgl)
+plot3d(Ventas,Antig,Inversion)
+with(datos.intro,texts3d(Ventas , Antig,Inversion,row.names(datos.intro)))
+##le añade animacion al grafico anterior 
+##no cerrar el grafico anterior 
+library(magick)
+movie3d(
+  movie = "3danimatedscatterplot",
+  spin3d(axis = c(0,0,1),rpm = 1),
+  duration = 350,
+  type="gif",
+  clean= TRUE)
+#FIN
+##DE 3 DIMENSIONES LO LLEVO A 2 DIMENSIONES
+##INDIVIDUOS(E1,E2,E3,...,E8) VS VARIABLES(Inversion,Ventas,Antig)
+library(FactoMineR)
+res.pca=PCA(datos.intro,ncp=2,graph = FALSE)
+library(factoextra)
+fviz_pca_biplot(res.pca,repel = TRUE,
+                col.var = "steelblue",
+                col.ind = "black")
+#NOTA: el costo es que se ha perdido la 5.5 % de variabilidad
+#66.9+27.6=94.5
+

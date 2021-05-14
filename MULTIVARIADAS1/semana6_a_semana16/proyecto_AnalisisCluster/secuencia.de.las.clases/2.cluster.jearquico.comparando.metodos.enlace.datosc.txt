@@ -1,0 +1,106 @@
+####################
+#CLUSTER JERARQUICO#
+####################
+
+#Si deseamos estandarizar
+#datos.s <- as.data.frame(scale(datosc))#datos originales#estan en la misma escala 1-7
+
+NO ESTANDAARIZO PORQUE MIS VARIABLES ESTAN EN UNA ESCALA DE 1-7
+
+
+library(foreign)
+datosc <- read.spss("compras-cluster.sav",
+                    use.value.labels=TRUE, 
+                    max.value.labels=TRUE,
+                    to.data.frame=TRUE)
+
+attr(datosc,"variable.labels") <- NULL
+datosc$caso <- NULL
+str(datosc)
+
+
+#################################
+# 7. Comparando dos dendogramas #
+#################################
+
+
+#metodo de enlace promedio  y metodo de enlace de ward
+
+
+library(dendextend)
+
+# Calculando la matriz de distancia
+res.dist <- dist(datosc, method = "euclidean")
+
+# Calculando 2 clusters jerárquicos aglomerativos
+hc1 <- hclust(res.dist, method = "average")#metodo de enlace promedio
+sol1=cutree(hc1,3)
+hc2 <- hclust(res.dist, method = "ward.D2")#metodo de enlace de ward
+sol2=cutree(hc2,3)
+cbind(sol1,sol2) #similares 
+#sol1 sol2
+#[1,]    1    1
+#[2,]    2    2
+#[3,]    1    1
+#[4,]    3    3
+#[5,]    2    2
+#[6,]    1    1
+#[7,]    1    1
+#[8,]    1    1
+#[9,]    2    2      #igual
+#[10,]    3    2     #diferente 
+#[11,]    2    2     #igual
+#[12,]    1    1
+#[13,]    2    2
+#[14,]    3    3
+#[15,]    1    1
+#[16,]    3    3
+#[17,]    1    1
+#[18,]    3    3
+#[19,]    3    3
+#[20,]    2    2
+#[21,]    1    1
+table(sol1,sol2)#observamos que un individuo se paso del cluster3 al cluster2
+#       sol2
+#sol1  1 2 3
+#1     9 0 0
+#2     0 6 0
+#3     0 1 5
+# Creando dos Dendrogramas
+dend1 <- as.dendrogram(hc1)
+plot(dend1)
+
+dend2 <- as.dendrogram(hc2)
+plot(dend2)
+# Creando una lista de Dendrogramas
+dend_list <- dendlist(dend1, dend2)
+
+
+#
+tanglegram(dend1, dend2)
+
+#la grafica trata de 
+#evitar q haya el menor cruze entre las lineas de los individuos 
+#sino hay cruze entre las lineas de los individuos indicaria 
+#que  ambas  soluciones son practicamente similares(metodo ward o metodo de average(promedio))
+
+#
+
+#-------------------------------------------------------------------
+
+#Entanglement
+
+tanglegram(dend1, dend2,
+           highlight_distinct_edges = FALSE, # Turn-off dashed lines
+           common_subtrees_color_lines = FALSE, # Turn-off line colors
+           common_subtrees_color_branches = TRUE, # Color common branches 
+           main = paste("entanglement =", round(entanglement(dend_list), 2))
+          )
+#¿que tan cruzado estan estos 2 dendogramas?
+
+# Entanglement es una medida entre 1 (full entanglement) #recontra cruzado # son diferente
+# y 0 (no entanglement).                                 #no hay cruzamiento# los metodos son iguales
+# Un bajo coeficiente de entanglement corresponde a 
+# un buen alineamiento
+
+# nos conviene que se aproxime a cero porque podriamos decir que son similares(metodos de enlace).

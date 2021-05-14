@@ -1,0 +1,63 @@
+CON EL OBJETIVO SI PODEMOS REDUCIR LA DIMENSIONALIDAD
+
+
+
+**Prueba de Esfericidad de Bartlett**
+
+```{r}
+library(psych)
+correlaciones<- corr.test(datosc) # se crea la matriz de correlaciones  
+
+
+#correlaciones$r                  # matriz correlaciones,las correlaciones 
+                                  # entre las variables son altas
+
+
+
+library(rela)
+library(ggplot2)
+r<-as.matrix(round(correlaciones$r,2))  #matriz de correlaciones con 2 decimales
+options(scipen=999)
+#n<-dim(datosc)   #12 filas y  24 columnas                    
+cortest.bartlett(r,n=nrow(datosc))
+```
+
+```{r}
+#¿Por que sucede esto?
+
+#Puede ser que nuestras variables estan altamente correlacionadas,
+#verficamos la determinante de la matriz correlacion de las variables.
+Rp=det(round(correlaciones$r,2))   ;Rp
+#si la determinante de la matriz correlacion es muy 
+#pequeña pero no es cero indica que mis variables
+#estan altamente intercorrelaciones.
+
+#https://www.uv.es/ceaces/multivari/factorial/matriz.htm
+
+
+# Prueba de Esfericidad de Bartlett
+
+#Prueba de Esfericidad de Bartlett
+#Ho: |Rp|=1 (las correlaciones teóricas entre cada par de variables es nulo)  
+#H1: |Rp|≠1 (las correlaciones teóricas entre cada par de variables NO es nulo)
+
+
+#conclusion:
+
+#p-valor < 0.05 ,
+#se rechaza la H0, se puede afirmar que las las correlaciones
+#teóricas entre cada par de variables NO es nulo.
+
+#en otras palabras nuestra matriz correlacion es diferente
+# a la matriz identidad podemos realizar analisis de componentes principales.
+
+
+
+#####################################
+
+https://brainly.lat/tarea/6625674
+
+
+Verdadero, el determinante de una matriz puede ser negativo, positivo o igual a cero.
+
+El determinante de una matriz: puede tomar valores positivos, negativos, o iguales a cero, si la matriz es singular entonces el determinante es igual a cero

@@ -1,0 +1,117 @@
+**Analisis Factorial:**
+
+
+
+ANALISIS EXPLORATORIO :
+```{r}
+library(GGally)
+ggcorr(datosc)
+
+#Se puede observar  que entre las 24 variables, 
+#hay correlaciones muy altas , correlaciones altas  y correlaciones medias.
+#esto podria traer problemas de multicolinealidad.
+```
+
+
+
+**Prueba de Esfericidad de Bartlett**
+
+```{r}
+
+library(rela)
+library(ggplot2)
+library(psych)
+correlaciones<- corr.test(datosc) #correlaciones de pearson
+r<-as.matrix(round(correlaciones$r,2))  #matriz de correlaciones con 2 decimales
+options(scipen=999)#sin notacion cientifica
+#n<-dim(datosc)               
+cortest.bartlett(r,n=nrow(datosc))
+```
+
+Prueba de Esfericidad de Bartlett
+
+Prueba de Esfericidad de Bartlett
+
+Ho: |Rp|=1 (las correlaciones teóricas entre cada par de variables es nulo)  
+
+H1: |Rp|≠1 (las correlaciones teóricas entre cada par de variables NO es nulo)
+
+
+conclusion:
+
+Se rechaza la H0, se puede afirmar que las correlaciones pearson
+teóricas entre cada par de variables NO es nulo,es decir nuestras
+variables estan correlacionadas.
+
+en otras palabras nuestra matriz correlacion pearson es diferente
+a la matriz identidad podemos realizar ANALISIS FACTORIAL.
+
+
+library(psych)
+correlaciones<- corr.test(datosc) # se crea la matriz de correlaciones  
+
+
+#correlaciones$r                  # matriz correlaciones,las correlaciones 
+                                  # entre las variables son altas
+
+
+
+
+
+
+**INDICADOR KAYSER-MEYER-OlkINN KMO y MSA**
+
+
+library(psych)
+KMO(datosc)     
+
+
+library(psych)
+facto.con.rota <- principal(r=datosc,
+                            nfactors=2,
+                            rotate="varimax")#matriz de correlacion
+
+
+Autovalores
+
+facto.con.rota$values
+
+
+
+Cargas factoriales
+
+facto.con.rota$loadings
+
+
+Con 2 componentes 
+
+¿que variables pertenecen a cada factor?
+
+
+library(psych)
+fa.diagram(facto.con.rota)
+
+
+
+
+facto.con.rota$communality
+
+
+
+
+
+CARGAS FACTORIALES
+
+facto.con.rota$loadings
+
+**componente 1:**
+
+
+**componente 2:**
+
+
+
+
+library(ade4)
+load <- facto.con.rota$loadings[,1:2]
+s.corcircle(load,grid=FALSE)

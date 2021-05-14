@@ -1,0 +1,34 @@
+
+## establecer directorio
+setwd("C:\\Users\\mjara\\Desktop")
+
+##cargar datos de mtcars
+
+mtcars-> mtcars
+
+
+
+
+
+##Exportar excel method 1 (rio)
+install.packages(rio)
+
+library(rio)
+
+export(mtcars,"mtcars_rio.xlsx" )
+
+#en este caso esta en formato excel tambien pudo ser stata,csv,txt,etc
+
+
+
+
+
+
+##Exportar excel method 2 (onpenxlsx)
+install.packages("openxlsx")
+
+library(openxlsx)
+
+head_style<-createStyle(halign="center", textDecoration = "Bold")
+
+write.xlsx(mtcars, "mtcars_open.xlsx", headerStyle=head_style)

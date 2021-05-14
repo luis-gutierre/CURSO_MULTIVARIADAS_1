@@ -1,0 +1,409 @@
+############################
+#4.
+#ACP usando el páquete ade4#
+#Matriz de Correlaciones####
+############################
+#---------------------------
+
+datos.acp <- read.delim("hatco-acp.txt")
+str(datos.acp)
+# No considerar la primera columna Id
+datos.acp$id <- NULL
+str(datos.acp)
+                                ###
+                                #1#
+#####################################
+#Análisis de Componentes Principales#INSUMO LOS DATOS ORIGINALES matriz correlacion
+#####################################
+library(ade4)
+acp <- dudi.pca(datos.acp,           # datos.s , scale = F
+                scannf=FALSE, #presentacion
+                scale=T, center = T,   # Matriz de Correlación
+                nf=ncol(datos.acp))#¿cuantos compenentes quieres quedarte?
+#en este caso lo pondre la misma cantidad de variables 
+#en otras palabras,no me hagas reduccion de dimensionalidad
+#center = T, es decir le quitara la media 
+#############
+#autovalores#
+#############
+acp$eig
+##############
+#autovectores#
+##############
+acp$c1
+#(z1,z2,z3,z4,z5,z6) variables estandarizadas
+#(y1,y2,y3,y4,y5,y6) componenetes principales
+####
+#y1=0.3960*z1-0.4790*z2+...-0.4840*z6      #donde y1,y2,y3 ,y4,y5,y6 :son componentes principales 
+#y2=
+#y3=
+#y4=
+#y5=
+#y6=-0.0326*z1-0.0785*z2+...+0.0394*z6
+#############
+###RESUMEN###
+#############
+summary(acp)
+##########################
+#########################AUTOVALORES
+##########################
+#ESTOY TRABAJANDO CON LA MATRIZ CORRELACION
+acp$eig
+#siempre los autovalores son decrecientes
+2.5131167 + 1.7396167 +0.5975188+ 0.5297714+ 0.4156729+ 0.2043035
+#ME DA EL NUMERO DE VARIABLES
+inertia.dudi(acp)
+                                ###
+                                #2#
+##########################################################################
+###############################OTRA FORMA ES ESTANDARIZAR#################
+###########################################################################INSUMO SERA LOS DATOS ESTANDARIZADOS matriz de variancia y covariancia 
+###############################CON LA FUNCIION 'SCALE'####################
+##########################################################################
+#A los datos le restara la media y lo divide entre su desviacion estandar
+datos.s <- scale(datos.acp)
+####
+acp2 <- dudi.pca(datos.s ,           # datos.s , scale = F
+                 scannf=FALSE, #presentacion
+                 scale=F, center = F,   # Matriz de Correlación
+                 nf=ncol(datos.s))
+#center:F, no le resta la media 
+#ya lo hizo en la linea anterior.#######datos.s <- scale(datos.acp)
+#scale:F,no divide entre la desviacion.
+#ya lo hizo en la linea anterior.#######datos.s <- scale(datos.acp)
+############################autovalores
+acp2$eig
+#2.5131167 1.7396167 0.5975188 0.5297714 0.4156729 0.2043035
+2.5131167+ 1.7396167+ 0.5975188 +0.5297714+ 0.4156729 +0.2043035
+###########################autovectores
+acp2$c1
+#paquete que viene por defecto  ###
+                                #3#
+##########################################################################
+###############################OTRA FORMA ES ESTANDARIZAR#################
+###########################################################################INSUMO SERA LOS DATOS ESTANDARIZADOS matriz de variancia y covariancia 
+###############################CON LA FUNCIION 'PRCOMP'###################
+##########################################################################
+# Otra opción con el paquete prcomp
+acp3 <- prcomp(datos.s, scale = F)
+acp3$sdev#RAIZ CUADRADA DE LOS AUTOVALORES
+acp3$sdev**2#AUTOVALORES
+#####################################################################
+#####################################################################
+####################TRBAJANDO CON 'ACP'###############################INSUMO SERA LOS DATOS ORIGINALES
+###################MATRIZ DE CORRELACION#############################
+#####################################################################
+#siempre los autovalores son decrecientes
+#los autovalores que sobrepasen el 1,son los autovalores que mejor explican la 
+#variabilidad(autovalor1,autovalor2)
+                          ###########  
+                          #CRITERIOS#
+######################################################################
+#########################ESTOS CRITERIO AVECES NO VAN COINCIDIR#######
+######################################################################
+#
+#
+#
+##########################primer criterio#############################
+######################################################################
+###################criterio de la media aritmetica####################
+######################################################################
+################
+# Segunda forma##autovalores lo llevamos a un dataframe#datos originales
+################
+library(ggplot2)
+ggplot(as.data.frame(acp$eig)) + 
+  aes(x=seq(1:6),acp$eig) + 
+  geom_point(color="red") + geom_line() + theme_bw() +
+  scale_x_continuous(breaks=seq(1:6)) +
+  labs(title="Scree-Plot",
+       x= "Componentes",
+       y= "Autovalor") +
+  geom_hline(yintercept = 1,lty=2,color="blue")
+#si lo que quiero explicar la variabilidad esta en la  traza de la 
+#matriz correlacion , la variabilidad total sera igual al numero de 
+#varibles iniciales(6).
+#si cada compopnente explicara igual lavaribilidad promedio deberia ser 1
+#6/6 =1  cda uno explicaria 1.
+##########################segundo criterio###########################
+#####################################################################
+##################criterio menor numero componentes##################
+###############que explican la mayor variabilidad posible############
+inertia.dudi(acp)
+#aqui tambien puedo observar que los autovalores que sobrepasan el 1 son
+#2.5131(representa 41.89%),1.7396(28.99%),representa la mayor varaibilidad 
+#posible y explicaran todas las variables.
+############################tercer criterio###########################
+#######################criterio_EL_MAS_IMPORTANTE#####################
+#reten las componentes necesarias que te expliquen todas la variables#
+######################################################################
+###############
+# Quinta forma#GRAFICO CIRCULAR
+###############
+library(factoextra)
+fviz_screeplot(acp, ncp=6)
+fviz_eig(acp, addlabels=TRUE, hjust = -0.3)
+
+fviz_eig(acp, addlabels=TRUE, hjust = -0.3,
+         barfill="white", barcolor ="darkblue",
+         linecolor ="red") + ylim(0,60) + theme_bw() + ylim(0.65)
+#PODEMOS OBSERVAR QUE PORCENTAJE REPRESENTA CADA AUTOVALOR.
+inertia(acp)
+#Decomposition of total inertia:
+#  inertia     cum  cum(%)
+#Ax1  2.5131   2.513   41.89
+#Ax2  1.7396   4.253   70.88
+#Ax3  0.5975   4.850   80.84
+#Ax4  0.5298   5.380   89.67
+#Ax5  0.4157   5.796   96.59
+#Ax6  0.2043   6.000  100.00
+#########################################matriz mas importante
+###########Correlaciones entre las variables y los componentes
+acp$co
+#     Comp1       Comp2       Comp3       Comp4       Comp5       Comp6
+#x1  0.6271027 -0.51412111  0.39206831  0.19743538  0.38666034 -0.01473879
+#x2 -0.7585691  0.06796015  0.54016778  0.24630594 -0.25738378 -0.03549837
+#x3  0.7299890 -0.33576801 -0.19772634  0.44623319 -0.33939198  0.03113215
+#x4 -0.4939048 -0.79857560 -0.03110906 -0.11180304 -0.02947690  0.32248801
+#x5 -0.4243370 -0.83196175 -0.14883073 -0.08201792 -0.03687097 -0.31231522
+#x6 -0.7665143  0.16749363 -0.29967638  0.46018812  0.28723687  0.01782078
+#podemos observar que la componente1('comp1') y la componente2('comp2')
+#explican muy bien a las variables,
+#ejemplo1;el comp1 explica muy bien 
+#a la variable x1 (0.62710027) y la comp2 tambien  explica bien aun(-0.51412111 )
+#ejemplo2;el comp1 explica muy bien 
+#a la variable x6 (-0.7665143) y la comp2  tambien explica pero aun(0.16749363 ),
+#en este caso comp1 ya lo esta explicando,hubiera sido fatal si ambas componentes
+#hubieran explicado comp1(0.1234) y la comp2(0.233),por ahi hay una componente 
+#digamos comp5 que lo explica (0.7000),ahi si es necesario incoporar un componente
+#mas,apesar que los anteriores criterios no coincidan,este es el mas importante.
+#######################################################################
+############################Verificando el calculo de las correlaciones
+#correlacion(variable,componente)=autovector*(autovalor)^0.5
+0.396 * sqrt(2.5131)
+#######################ahora que si se que se trabaja con dos variables
+library(ade4)
+acp <- dudi.pca(datos.acp,           # datos.s , scale = F
+                scannf=FALSE, #presentacion
+                scale=T, center = T,   # Matriz de Correlación
+                nf=2)#me que quedare con 2 componentes
+#########igual me mostrara todos los componentes,si aplico el sgt codigo
+summary(acp)
+#########mostrando todos los autovaalores 
+acp$eig
+#2.5131167 1.7396167 0.5975188 0.5297714 0.4156729 0.2043035
+########mostrando los autovectores,aqui si se mostrara solo 2 autovectores
+#ya que estamos trabajaremos con dos componentes.
+acp$c1
+#       CS1         CS2
+#x1  0.3955782 -0.38979714
+#x2 -0.4785076  0.05152613
+#x3  0.4604792 -0.25457311
+#x4 -0.3115565 -0.60546529
+#x5 -0.2676730 -0.63077805
+#x6 -0.4835195  0.12699058
+########################################################################
+########################################################################
+############################Mapas Perceptuales##########################
+########################################################################
+inertia(acp)
+#el componente1 me retiene 41.89
+#el componente2 me retiene 28.99
+########################################################################
+########################################################################
+########################################################################
+#######################las sgts graficas son circuferencias#############
+##Primera forma 
+s.corcircle(acp$co,grid=FALSE)
+# Segunda forma
+
+library(factoextra)
+fviz_pca_var(acp)
+fviz_pca_var(acp, col.var="steelblue")+theme_minimal()
+######################la grafica de circuferencia mas recomendable######
+#es decir mientras mas cercano a la linea circuferencia la correlacion
+#es mas cercano a 1,mientras la flecha sea mas pequeña la correlacion es
+#pequeña.
+#
+# tercera forma,usando el paquete FactoClass
+library(FactoClass)
+plotcc(acp$co)#correlaciones
+#############################################################
+#############################################################
+#############################################################
+#############################################################
+#contribucion de los componentes principales a las variables
+contrib=acp$co*acp$co
+contrib
+0.3932577+ 0.264320512#contribucion de los componentes a x1
+#0.6575782*100=65.7% de la variabilidad de x1 esta siendo 
+#explicada por los dos primeros componentes.
+#   Comp1       Comp2
+#x1 0.3932577 0.264320512
+#x2 0.5754270 0.004618582
+#x3 0.5328840 0.112740154
+#x4 0.2439419 0.637722996
+#x5 0.1800619 0.692160355
+#x6 0.5875442 0.028054115
+################PARA UNA MEJOR VISUALIZACION#################
+contrib=as.matrix(contrib)#necesitamos llevarlo a una matrix
+#############################################################
+library(corrplot)
+corrplot(contrib,is.corr = FALSE,addCoef.col = T)
+#podemos observar en la grafica,que la variable 
+#x1:es mejor explicada con la componente1
+#x2:es mejor explicada con la componente1
+#x3:es mejor explicada con la componente1
+#x4:es mejor explicada con la componente2
+#x5:es mejor explicada con la componente2
+#x6:es mejor explicada con la componente1
+############################################################
+############################################################
+####vectores propios o autovectores
+acp$c1
+#y1=0.3955782*z1 -0.4785076*z2+ 0.4604792*z3 -0.3115565*z4 -0.2676730*z5 -0.4835195*z6
+#y2=-0.38979714*z1+0.05152613*z2-0.25457311*z3-0.60546529*z4-0.63077805*z5+0.12699058*z6
+#z:estadarizados,y:componentes
+####autovalores
+acp$eig
+acp$c1
+###############################
+#COORDENADAS DE LOS INDIVIDUOS#
+###############################
+#
+#coordenadas de mis 10 primeros individuos
+#
+##########################################################################################
+#En 'y1' y 'y2' (componentes) ,los datos originales (estaban sin estandarizar)           #
+#primero,estandarizamos nuestros datos originales                                        # 
+#segundo,6 variables reemplazamos seis datos estandarizados de cualquier fila,ejm:(fila1)#
+#tercero,reemplazo en el modelo                                                          #
+#y1=0.3955782*z1 -0.4785076*z2+ 0.4604792*z3 -0.3115565*z4 -0.2676730*z5 -0.4835195*z6   #
+#y2=-0.38979714*z1+0.05152613*z2-0.25457311*z3-0.60546529*z4-0.63077805*z5+0.12699058*z6 #
+#solo 'y1' y 'y2' solo son 2 componentes xq ya hemos corroborado.                        #
+##########################################################################################  
+acp$li[1:10,]
+Axis1      Axis2
+#1   1.3585305  0.3451913   
+#2  -2.5822265 -0.8795180   
+#.
+#.
+#10 -1.7009623 -0.5423739##
+###########################
+#¿como se obtuvo (-1.701,-0.542)?
+#y1=0.3955782*z1 -0.4785076*z2+ 0.4604792*z3 -0.3115565*z4 -0.2676730*z5 -0.4835195*z6
+#y2=-0.38979714*z1+0.05152613*z2-0.25457311*z3-0.60546529*z4-0.63077805*z5+0.12699058*z6
+###########################
+#Scores o Puntuaciones de cada individuo
+acp$li[1:10,]#componenente
+###########################
+datos.s[10,]#datos estandarizados,de la fila  10 ( 'z')
+#0.3672222  0.9501038 -1.0054078  0.6646552  0.6935867  1.0906859,
+#lo reemplazo 
+#y1=0.3955782*z1 -0.4785076*z2+ 0.4604792*z3 -0.3115565*z4 -0.2676730*z5 -0.4835195*z6
+y2=-0.38979714*0.3672222+0.05152613*0.9501038-0.25457311*-1.0054078-0.60546529*0.6646552-0.63077805*0.6935867+0.12699058*1.0906859
+y1=0.3955782*0.3672222 -0.4785076*0.9501038+ 0.4604792*-1.0054078 -0.3115565*0.6646552 -0.2676730*0.6935867 -0.4835195*1.0906859 
+cbind(y1,y2)
+#    y1         y2
+#-1.692436 -0.5396553
+acp$li[1:10,]#sale similar o igual a la fila '10'
+###########################
+#para que lo datos no esten 
+#en notacion cientifica
+options(scipen = 999)
+#matriz de covariancia y variancia
+cov(acp$li)
+(2.5385017425976257321452+1.7571886001840355540082)/6*100
+#71.59484%
+#matriz de correlacion 
+cor(acp$li)
+#         Axis1                    Axis2
+#Axis1 1.0000000000000000000000 0.0000000000000002013354
+#Axis2 0.0000000000000002013354 1.0000000000000000000000
+View(cbind(datos.acp,datos.s))#datos.acp:datos de origen,#datos.s:datos estandarizados
+#
+View(cbind(datos.acp,datos.s,acp$li))
+##observamos;transformamos nuestro sistema a un nuevo sistema('axis1','axis2'),apartir 
+#de estos componentes(insumos) haremos nuestro modelo predictivo(modelo regresion multiple).
+##############################################################################################
+##############################################################################################
+##############aqui estamos graficando con los nuevos componentes  a los individuos
+##############en un plano de 2 dimensiones
+#acp$li#con las componentes hayamos las coordenadas de los individuos en un nuevo sistema
+#de 2 dimensiones.
+acp$li#100 filas o registros
+#
+#Primera forma####RECOMIENDO
+s.label(acp$li,xax=1,yax=2,clabel=0.7,grid=FALSE,boxes=FALSE)
+
+# Segunda forma 
+library(factoextra)
+fviz_pca_ind(acp)
+
+# Gráfica de individuos sobre los componentes 2 y 1
+s.label(acp$li,xax=1,yax=2,clabel=0.7,grid=FALSE,boxes=FALSE)
+
+# Tercer forma, usando el paquete FactoClass
+plot.dudi(acp,Tcol = F)
+s.label(acp$li,xax=1,yax=2,clabel=0.7,grid=FALSE,boxes=FALSE)
+#########################################################################
+########################GRAFICIANDOOOOOOOOO##############################
+############Para representar ambas cosas a la vez,es decir lo individuos 
+#y las variables en mi nuevo sistema 
+#########################################################################
+############biplot
+# Primera forma
+library(ade4)####grafica
+s.label(acp$li,clabel=0.7,grid=FALSE,boxes=FALSE)#INDIVIDUOS
+s.corcircle(acp$co,grid=FALSE,add=TRUE,clabel=0.7)#VARIABLES
+# Segunda forma##grafica
+library(factoextra)
+fviz_pca_biplot(acp, repel = F,
+                col.var = "steelblue",
+                col.ind = "black" )
+#########observacion:en este caso solo eran 100 datos,en el mundo de los 
+#datos son miles ,millones, entonces nos guiaremos,con la correlacion
+#############
+########################################################################
+######################la grafica de circuferencia mas recomendable######
+########################################################################
+#es decir mientras mas cercano a la linea circuferencia la correlacion
+#es mas cercano a 1,mientras la flecha sea mas pequeña la correlacion es
+#pequeña.
+#
+# tercera forma,usando el paquete FactoClass
+library(FactoClass)
+plotcc(acp$co)#correlaciones
+#
+inertia(acp)
+acp$eig
+acp$co
+########################################################################
+#################CONCLUSION########CONCLUSION#################CONCLUSION
+###########EN ESTE CASO LO PODEMOS EXPLICAR CON 2 COMPONENTES###########
+###
+#X1 Rapidez del servicio 
+#X3 Flexibilidad de precios 
+#X2 Nivel de precios 
+#X6 Calidad del producto
+#X4 imagen del fabricante 
+#X5 imagen de la fuerza de ventas
+#######################
+#COMPONENTE LALA
+#X2  -
+#X6  -  
+#X1     +
+#X3     +
+
+#COMPONENTE IMAGEN
+#X4  -
+#X5  -
+#¿SI BAJO LOS PRECIOS(X2) DE MIS PRODUCTOS,MEJORARA LA
+#IMAGEN QUE TIENEN DE LA FUERZA DE VENTAS(X5)?
+#RESPUESTA:POR LA GRAFICA DIREMOS QUE NO XQ LAS VARIABLES NO ESTAN CORRELACIONADAS,
+#(ESTAN EN DIFERENTES DIMENSIONES)
+#¿SI MEJORO LA FLEXIBILIDAD DE PRECIOS(X3),AFECTARA SOBRE LA PERCEPCION DE LA CALIDAD(X6) DE MIS
+#PRODUCTOS?
+#RESPUESTA:SI VA A AFECTAR XQ LAS VARIABLES ESTAN CORRELACIONADAS,EJEMPLO;
+#SAGAFALABELLA AL BAJAR LOS PRECIOS DE LOS PRODUCTOS HARA QUE LOS CLIENTES 
+#PIENSEN QUE ES DE MALA CALIDAD.

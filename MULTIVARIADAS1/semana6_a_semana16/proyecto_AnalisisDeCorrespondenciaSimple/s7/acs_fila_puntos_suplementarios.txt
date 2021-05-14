@@ -1,0 +1,23 @@
+############################### 
+#ACS con puntos suplementarios#ingresando en (fila)'ideal'
+###############################
+datos<- matrix(c(30,	30,	155,
+                      30,	130,	30,
+                      80,	30,	30,
+                      80,	30,	5,
+                      80,130,155 )#fila ideal
+                      ,ncol=3,byrow=T,#si ingrese (fila) 'ideal',se pone en fx de columna(ncol=3)
+                      dimnames = list(c('A','B','C','D','Ideal'),
+                               c('Segmento1','Segmento2','Segmento3')))
+datos
+# ACS con FactoMineR
+
+# Prueba de Independencia
+chisq.test(datos[-5,])
+# Los segmentos son dependientes de las marcas (Pvalor<alfa)
+
+# ACS (2 dimensiones)
+library(FactoMineR)
+datos.acs.s <-CA(X=datos,ncp=2,row.sup=5,graph=T)#insumo la matrix
+
+summary(datos.acs.s)

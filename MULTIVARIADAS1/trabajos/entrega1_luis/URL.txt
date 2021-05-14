@@ -1,0 +1,43 @@
+https://archive.ics.uci.edu/ml/machine-learning-databases/00477/
+
+
+#####
+Fuente:
+
+Propietario original y
+nombre del donante : Prof. I-Cheng Yeh
+Instituciones: Departamento de Ingeniería Civil, Universidad de Tamkang, Taiwán.
+Correo electrónico: 140910 '@' mail.tku.edu.tw
+TEL: 886-2-26215656 ext. 3181
+
+Fecha de donación: 18 de agosto de 2018
+
+
+Información del conjunto de datos:
+
+El conjunto de datos históricos del mercado de valoración de bienes raíces se recopila de Sindian Dist., New Taipei City, Taiwán. La â € œvaluaciÃ³n inmobiliariaâ € ?? es un problema de regresión. El conjunto de datos se dividió aleatoriamente en el conjunto de datos de entrenamiento (2/3 muestras) y el conjunto de datos de prueba (1/3 muestras).
+
+
+Información de atributos:
+
+Las entradas son las siguientes
+X1 = la fecha de la transacción (por ejemplo, 2013.250 = 2013 marzo, 2013.500 = 2013 junio, etc.)
+X2 = la edad de la vivienda (unidad: año)
+X3 = la distancia a la estación MRT más cercana (unidad: metro )
+X4 = el número de tiendas de conveniencia en el círculo habitable a pie (entero)
+X5 = la coordenada geográfica, latitud. (unidad: grado)
+X6 = la coordenada geográfica, longitud. (unidad: grado)
+
+La salida es la siguiente:
+Y = precio de la vivienda de la unidad de área (10000 Nuevo dólar taiwanés / Ping, donde Ping es una unidad local, 1 Ping = 3,3 metros cuadrados)
+
+
+Papeles relevantes:
+
+Yeh, IC y Hsu, TK (2018). Construcción de modelos de valoración inmobiliaria con enfoque comparativo mediante razonamiento basado en casos. Soft Computing aplicado, 65, 260-271.
+
+
+
+Solicitud de cita:
+
+Yeh, IC y Hsu, TK (2018). Construcción de modelos de valoración inmobiliaria con enfoque comparativo mediante razonamiento basado en casos. Soft Computing aplicado, 65, 260-271.

@@ -1,0 +1,137 @@
+################### 
+#CLUSTER PARTICION#
+###################
+
+################################################################
+#CLUSTER K-MEANS Y CRITERIO DE SUMA DE CUADRADOS INTRA(ELBOW)#CODO
+################################################################
+
+#estructura del k-means:
+
+#kmeans(x, centers, iter.max = 10, nstart = 1,
+#       algorithm = c("Hartigan-Wong", "Lloyd", "Forgy",
+#                     "MacQueen"), trace=FALSE)
+
+
+NO ESTANDAARIZO PORQUE MIS VARIABLES ESTAN EN UNA ESCALA DE 1-7
+
+
+#Si deseamos estandarizar
+#datos.s <- as.data.frame(scale(datosc))#datos originales#estan en la misma escala 1-7
+
+library(foreign)
+datosc <- read.spss("compras-cluster.sav",
+                    use.value.labels=TRUE, 
+                    max.value.labels=TRUE,
+                    to.data.frame=TRUE)
+
+attr(datosc,"variable.labels") <- NULL
+datosc$caso <- NULL
+str(datosc)
+
+
+
+
+set.seed(123)
+km <- kmeans(datosc, 
+             centers=3,      # Número de Cluster
+             iter.max = 100, # Número de iteraciones máxima
+             nstart = 25,  # Número de puntos iniciales(25 SOLUCIONES,25 partidas inciales)
+             algorithm="Lloyd")#algoritmo por defecto es "Hartigan-Wong"
+#k-means me dara de las 25 soluciones ,en este caso  3  centroides
+#inciales al azar(pueden estar cerca o lejos) basandose del criterio
+#de la suma de cuadrado intra (minima,la mejor posible,se esfuerza)
+
+
+
+# ntart=25, significa que se probarán 25 puntos iniciales 
+# aleatorios y luego elegirá aquel donde la variación 
+# dentro (intra) de cluster sea mínima. 
+# El valor por defecto es 1
+
+#numero de iteracciones -algoritmo "Lloyd"
+km$iter
+#9
+
+#numero de iteracciones -algoritmo "Hartigan-Wong"
+km$iter
+#2
+
+#numero de iteracciones -algoritmo "MacQueen"
+km$iter
+#5
+
+##numero de iteracciones -algoritmo por defecto es "Hartigan-Wong"
+km$iter
+#2
+
+
+# Mostrar resumen de los clusters
+km
+
+
+##########################################
+# Suma de cuadrados intra de cada cluster#
+##########################################
+km$withinss      
+#31.83333 20.50000 37.55556
+
+
+
+################################
+# suma de cuadrados intra total#
+################################
+#(Suma de cuadrados intra del cluster1+Suma de cuadrados intra del cluster2 +Suma de cuadrados intra del cluster3 )
+km$tot.withinss 
+#89.88889                        #menor posible
+
+#########################
+#suma de cuadrados total#
+#########################
+# Suma de cuadrados total suma(cuadrado(x - media)) 
+
+#(dato1-media)^2 + (dato2-media)^2+ (dato3-media)^2 +...+ (daton-media)^2
+km$totss                              
+#334.6667                         
+
+
+#################################
+#suma de cuadrados entre cluster#
+#################################
+km$betweenss                     #mayor posible
+#244.7778
+# Se obtiene por diferencia #(#suma de cuadrados total# y # suma de cuadrados intra total#)
+km$totss-km$tot.withinss
+#244.7778
+
+
+
+# Tamaño de cada cluster
+km$size
+
+# Promedios de cada cluster 
+km$centers
+
+# Número de iteraciones
+km$iter
+#9  iteraccion es la mejor de mis 100 iteracciones(hay 25 formas de empezar con 3 centroides iniciales)
+
+
+
+#forma1:
+# Junta el archivo de datos con la columna de cluster
+library(dplyr)#tidyverse
+datosc %>% mutate(grp=km$cluster)->datos.k  ;datos.k       #LOS CLUSTER SERVIRAN DE INSUMO A UN MODELO DE REGRESION(TECNICA SUPERVISADA)
+
+
+#forma2:
+datos.k <- cbind(datosc,grp=factor(km$cluster))  ;datos.k  #LOS CLUSTER SERVIRAN DE INSUMO A UN MODELO DE REGRESION(TECNICA SUPERVISADA)
+
+head(datos.k)
+str(datos.k)
+datos.k$grp <- factor(datos.k$grp)#convirtiendo los cluster en factor   #LOS CLUSTER SERVIRAN DE INSUMO A UN MODELO DE REGRESION(TECNICA SUPERVISADA)
+
+#GRAFICA
+library(factoextra)
+fviz_cluster(km, data = datosc, ellipse.type = "convex") +
+  theme_classic()

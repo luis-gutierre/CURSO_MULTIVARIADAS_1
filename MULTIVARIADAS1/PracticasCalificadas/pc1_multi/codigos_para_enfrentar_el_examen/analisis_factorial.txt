@@ -1,0 +1,334 @@
+####################
+#ANALISIS FACTORIAL#
+####################
+#MATRIZ CORRELACION=MATRIZ DE CARGA* MATRIZ DE CARGA(TRANSPUESTA)+FACTORES ESPECIFICOS
+#CUANTO MAS CERCANO A 1 ES MUCHO MEJOR,OBVIAMENTE VA SER IGUAL 1 YO RETENGA 10 VARIABLES
+#10 FACTORES COMUNES,PERO NO ESTOY REDUCIENDO LA DIMENSIONALIDAD Y ESO NO ES LA IDEA(REDUCIR)
+#LA DIMENSIONALIDAD,LA IDEA ES TENER MENOR FACTORES COMUNES QUE EL NUMERO DE VARIABLES.
+#(ESTO EXPLICA XQ TIENE QUE SER CERCANO A 1 Y NO EXACTAMENTE 1).
+#1=h^2 + w^2, donde h^2 comunidad y w^2 especifidad.
+#######################################################################################
+#LO QUE QUIERO ESQ 'FACTORES DE COMUNIDAD' SEA LA PARTE QUE MAS EXPLIQUE LA VARIANCIA.#
+#######################################################################################
+#¿COMO HALLAR LAS 'CARGAS FACTORIALES' O PESOS O COEFIENCIENTES?
+#LO RESPECTIVOs 'Lij'
+#METODO DE COMPONENETES
+#
+#el modelo que deseo plantear es 'la variable igual factores comunes(F) + factores especificidad'(E)
+#
+#
+#Y=L11*F1+L12*F2+...+L1m*Fm +E1
+#
+#revertir el sistema.
+#
+library(pacman)
+p_load(rela, psych, ade4,GGally,PerformanceAnalytics)
+# Lectura de datos con 7 variables
+datos <- read.delim("hatco-factorial.txt")
+str(datos)
+# x7 : Servicio
+
+# No considerar la primera columna Id
+datos$id <- NULL
+str(datos)
+
+############################################
+# 2. Análisis Exploratorio con 7 variables #                                       #
+############################################
+
+# Análisis Descriptivo y Análisis de Correlación
+library(psych)
+describe(datos)
+cor(datos)
+
+corr.test(datos)
+
+library(PerformanceAnalytics)
+chart.Correlation(datos, histogram=TRUE, pch=20)
+#MAPA DE CALOR##SUGERENCIA usar- 'windows()'
+library(psych)
+cor.plot(cor(datos),
+         main="Mapa de Calor", 
+         diag=F,number=F,
+         show.legend = T)  
+#MAPA DE CALOR##SUGERENCIA usar- 'windows()'
+library(GGally)
+ggcorr(datos)
+
+library(dataMaid)#nos genera un word,observacion,se tiene q cambiar de nombre 
+#ya que genera un word unico.
+makeCodebook(datos,file="datosfactorial")
+#####################################
+# Prueba de Esfericidad de Bartlett##
+#####################################
+library(rela)
+options(scipen=0)  # scipen = 999 Eliminan la notación científica
+cortest.bartlett(cor(datos),n=nrow(datos))
+#pvalor es menor a 0.05,se rechaza la hipotesis nula H0.
+# La matriz de correlación difirente a la matriz Identidad.
+
+# Indicador Kaiser-Meyer-Olkinn KMO y MSA 
+KMO(datos)
+
+# Overall MSA =  0.45 <- KMO
+#
+#
+#
+# Lectura de datos con 6 variables
+datos <- read.delim("hatco-factorial.txt")
+str(datos)
+
+# No considerar la primera columna Id ni la última variable X7
+datos$id <- NULL
+datos$x7 <- NULL
+datos.facto <- datos
+str(datos.facto)
+
+# Analisis descriptivo y Analisis de Correlacion
+library(psych)
+describe(datos.facto)
+cor(datos.facto)
+
+corr.test(datos.facto)
+
+library(PerformanceAnalytics)
+chart.Correlation(datos.facto, histogram=TRUE, pch=20)
+
+library(psych)
+cor.plot(cor(datos.facto),
+         main="Mapa de Calor", 
+         diag=F,number=F,
+         show.legend = T)  
+
+# Prueba de Esfericidad de Bartlett
+library(rela)
+cortest.bartlett(cor(datos.facto),n=nrow(datos.facto))
+
+# Indicador Kaiser-Meyer-Olkinn KMO y MSA 
+KMO(datos.facto)
+####
+##
+###
+#######################################################
+#ANALISIS FACTORIAL SIN ROTACION CON FUNCION PRINCIPAL#
+#######################################################
+library(psych)
+facto.sin.rota <- principal(r=datos.facto,#r=matriz de correlacion
+                            nfactors=2,#¿CUANTOS FACTORES?
+                            covar = F,#¿QUIERES TRABAJAR CON LA MATRIZ VARIANCIA Y COVARIANCIA?RPTA:NO,yo quiero trbjar con los datos estandarizados
+                            rotate="none")#no  quiero rotar
+str(facto.sin.rota)
+
+# Autovalores
+facto.sin.rota$values
+####
+####
+###
+eig.val <- as.data.frame(facto.sin.rota$values)#guardando los autovalores en un dataframe.
+#por que lo graficaremos en la sgt linea de codigo.
+###criterio para determinar los factores.
+library(ggplot2)
+ggplot(eig.val) + aes(x=seq(1:6),y=facto.sin.rota$values) +
+  geom_point(color="red") +
+  scale_x_continuous(breaks=seq(1:6)) +
+  labs(title="Scree-Plot",
+       x= "Componentes",
+       y= "Autovalor") +
+  geom_col(fill="white",
+           col="black") +
+  geom_line() + 
+  geom_hline(yintercept = 1,lty=2,color="blue") +
+  geom_text(aes(label=round(facto.sin.rota$values,2) ), vjust=1.5,color="black") +
+  theme_bw()
+#####
+#######################
+#####comunalidades#####
+#######################
+facto.sin.rota$communality
+#       x1        x2        x3        x4        x5        x6 
+#0.6575783 0.5800456 0.6456241 0.8816649 0.8722222 0.6155984 
+#interpretacion:
+#el 65.75783% de la variabilidad de x1 esta explicada por los factores de comunes(compartida).
+#(100-65.75)% de la varibilidad de x1 esta explicada por la misma variable o por su factor especifico(no compartido).
+#¿que pasaria si x6 su comunalidad=0.2?
+#agregar un factor,de 2 factores ahora serian 3 factores.
+################### 
+###especificidad###
+###################
+facto.sin.rota$uniquenesses
+#####################################################    
+# Cargas Factoriales, Correlaciones Factor, Variable#
+#####################################################
+facto.sin.rota$loadings               
+
+#     PC1    PC2   
+# x1 -0.627  0.514     #0.627**2 + 0.514**2 = Comunalidad
+# x2  0.759       
+# x3 -0.730  0.336
+# x4  0.494  0.799
+# x5  0.424  0.832
+# x6  0.767 -0.167
+#
+#0.627**2 + 0.514**2            #comunalidad
+#facto.sin.rota$communality     #comunalidad
+#####################
+#modelo_de_factorial#
+#####################
+#x1=0.627*F1+0.514*F2 +e1       x1=z1 xq es variable estandarizada
+#.
+#x6=0.767*F1-0.167*F2 +e2       x6=z6 xq es variable estandarizada
+
+
+# (-0.627, 0.514)  -> Cargas Factoriales (lij) 
+#                     Correlaciones entre X(variable estandarizada) y F(se genero de la estandarizacion del componente 'y')
+# 0,658 = 65,8% de la variabilidad de X1 es explicada 
+#               por los factores comunes (F1, F2)
+
+# Gráfica de circulo de correlaciones
+library(ade4)
+load.sin.rota <- facto.sin.rota$loadings[,1:2]
+s.corcircle(load.sin.rota,grid=FALSE)
+##############################################################################################################################
+##############################################################################################################################
+####################VIERNES#######################VIERNES###################VIERNES###########################################
+##############################################################################################################################
+#
+################
+# SIN ROTACION #
+################
+#
+##############
+# Autovalores#
+##############
+facto.sin.rota$values#autovalores sin rotacion.
+#2.5131167 1.7396167 0.5975188 0.5297714 0.4156729 0.2043035
+#############
+#comunalidad#
+#############
+facto.sin.rota$communality
+#      x1        x2        x3        x4        x5        x6 
+#  0.6575783 0.5800456 0.6456241 0.8816649 0.8722222 0.6155984
+facto.sin.rota
+#                       PC1  PC2
+#SS loadings           2.51 1.74
+#Proportion Var        0.42 0.29
+#Cumulative Var        0.42 0.71
+#Proportion Explained  0.59 0.41
+#Cumulative Proportion 0.59 1.00
+#
+#######################################################
+#ANALISIS FACTORIAL CON ROTACION CON FUNCION PRINCIPAL#
+#######################################################
+#
+#################################
+#rotando con el metodo 'varimax'#
+#################################
+library(psych)
+facto.con.rota <- principal(r=datos.facto,
+                            nfactors=2,
+                            rotate="varimax")#matriz de correlacion
+
+facto.con.rota
+#
+#                      RC1  RC2
+#SS loadings           2.37 1.88
+#Proportion Var        0.39 0.31
+#Cumulative Var        0.39 0.71
+#Proportion Explained  0.56 0.44
+#Cumulative Proportion 0.56 1.00
+#
+#Puedo observar que los autovalores cambian pero en la acumalacion de variancia sigue siendo igual  0.71.
+#es el pocentaje de variabilidad que voy a explicar.
+facto.con.rota$values          # autovalores   
+facto.con.rota$communality     # Comunalidad
+facto.con.rota$uniquenesses    # Especificidad
+facto.con.rota$loadings
+#conclusion:
+#sin rotacion y con rotacion solo es diferente las cargas, es decir las carrelaciones entre  la variable estandarizada y el factor.
+#
+# Gráfica de circulo de correlaciones
+library(ade4)
+load <- facto.con.rota$loadings[,1:2]
+s.corcircle(load,grid=FALSE)
+##########################################
+#¿que variables pertenecen a cada factor?#
+##########################################
+fa.diagram(facto.con.rota)##¿que variables pertenecen a cada factor?##
+####
+####
+####
+####
+####
+####
+library(DandEFA) #observar la comunalidad y especificidad
+dandelion(facto.con.rota$loadings,
+          bound = 0.7, ##correlacion de 0.7 para arriba
+          mcex = c(1,1),#tamaño 1 para los graficos que estan a la izquierda y tamaño 1 para los graficos que estan a la derecha
+          palet = c("blue","red"))#azul positivos y rojo negativos
+
+#insumo para un modelo _puede ser para modelo de regresion.
+#
+facto.con.rota$scores#insumo
+#
+#data1=data.frame(Y,cp1,cp2)
+#str(data1)#414 instancias o filas o observaciones
+########################################
+####FORMANDO MI MODELO DE REGRESION#####
+########################################
+#RegCP=lm(Y~cp1+cp2,data=data1)
+#summary(RegCP)
+######### 
+##BETAS##
+#########
+#B0=RegCP$coefficients[1]
+#B1=RegCP$coefficients[2]
+#B2=RegCP$coefficients[3]
+#cbind(B0,B1,B2)
+#Y1=B0+B1*cp1+B2*cp2
+##################################################################
+#comprobando el factores comunes que tiene media cero y variancia#
+##################################################################
+mean(facto.con.rota$scores[,1])
+mean(facto.con.rota$scores[,2])
+var(facto.con.rota$scores[,1])
+var(facto.con.rota$scores[,2])
+#
+cor(facto.con.rota$scores)#factores  no estan correlacionados
+#visualizacion de los datos
+View(cbind(datos.facto,
+           as.data.frame(scale(datos.facto)),
+           facto.con.rota$scores))
+
+# Gráfica de variables sobre el primer plano de componentes
+load <- facto.con.rota$loadings[,1:2]
+plot(load, pch=20, 
+     xlim=c(-1,1), 
+     ylim=c(-1,1),
+     xlab="Factor 1",
+     ylab="Factor 2") 
+abline(h=0,lty=3)
+abline(v=0,lty=3)
+text(load,pos=1,labels=names(datos.facto),cex=0.8) # add variable names
+
+
+# Almacenar los datos y los resultados de los scores en un
+# archivo CSV
+head(facto.con.rota$scores,10)
+
+summary(facto.con.rota$scores)
+var(facto.con.rota$scores)
+
+salida.facto <- cbind(datos.facto,facto.con.rota$scores)
+salida.facto
+str(salida.facto)
+write.csv(salida.facto,"hatco-datos-factorial-con-acp.csv")
+
+# Gráfica de Matriz de Correlación entre  Variables y Factores
+library(psych)
+cor.plot(cor(salida.facto),
+         main="Mapa de Calor", 
+         diag=TRUE, number = F,
+         show.legend = TRUE)       
+
+library(GGally)
+ggpairs(salida.facto)

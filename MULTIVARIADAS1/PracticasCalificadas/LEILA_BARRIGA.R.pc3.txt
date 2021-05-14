@@ -1,0 +1,370 @@
+#####################################
+#    TERCERA PRÁCTICA CALIFICADA    # 
+# CLUSTER JERÁRQUICO Y DE PARTICIÓN #
+#     Mg. Jesús Salinas Flores      # 
+#     jsalinas@lamolina.edu.pe      #
+#####################################
+
+# Para limpiar el workspace, por si hubiera algún dataset 
+# o información cargada
+rm(list = ls())
+graphics.off()
+
+# Cambiar el directorio de trabajo
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+getwd()
+
+# Otras opciones
+options(scipen=999)      # Eliminar la notación científica
+options(digits = 3)      # Número de decimales
+
+# Paquetes
+library(pacman)
+p_load(readxl,cluster,aplpack,fpc,foreign,TeachingDemos,
+       factoextra, ape,corrplot,DataExplorer,
+       funModeling,compareGroups,tidyverse,dendextend,
+       FeatureImpCluster,flexclust,LICORS)
+
+#----------------------#
+# Descripción del caso #
+#----------------------#
+
+# Para las entidades bancarias en el Perú, la tarjeta de 
+# crédito es uno de los principales productos ofrecidos al 
+# mercado. La competencia entre entidades bancarias por la
+# participación en el mercado de tarjetas de crédito es alta, 
+# lo que lleva al desarrollo de estrategias para la
+# fidelización de los clientes y obtención de nuevos clientes. 
+# Mediante la fidelización de los clientes se busca una
+# relación a largo plazo y rentabilidad, una forma de esto es
+# conociéndolos mediante el análisis de la información 
+# disponible del cliente. De esta manera poder brindarles 
+# promociones, beneficios y/o servicios que les den un valor
+# agregado. 
+
+# Para este caso se tomó como base las transacciones de compra
+# con tarjeta de crédito de 5000 clientes durante el periodo de
+# agosto 2020 y noviembre 2020. La base esta compuesta por 10
+# variables cuantitativas
+
+# Variable      Definición
+# RUBROS_TC     Cantidad de rubros diferentes donde se realizó
+#               consumo en el periodo
+# COMERCIOS_TC  Cantidad de comercios diferentes donde se
+#               realizó consumo
+# DIAS_POR_MES  Cantidad promedio de días con compra en un mes
+# TRX_MERCADO   Cantidad de transacciones en el rubro mercado
+# TRX_ROPA      Cantidad de transacciones en el rubro ropa
+# TRX_TRANSPORTE Cantidad de transacciones en el rubro transporte durante el periodo
+# TRX_COMIDA    Cantidad de transacciones en el rubro comida
+# TRX_BOTICA    Cantidad de transacciones en el rubro botica
+# TRX_BODEGAS   Cantidad de transacciones en el rubro bodega
+# TRX_GRIFO     Cantidad de transacciones en el rubro grifo
+
+base_inicial <- read.csv("BDD-TARJETAS DE CREDITO.csv",sep=";")
+
+# Completando los valores vacíos con cero
+# Los valores perdidos significa que no realizó transaccion en
+# dicho rubro
+base_inicial$TRX_MERCADO[is.na(base_inicial$TRX_MERCADO)] <- 0
+base_inicial$TRX_ROPA[is.na(base_inicial$TRX_ROPA)] <- 0
+base_inicial$TRX_TRANSPORTE[is.na(base_inicial$TRX_TRANSPORTE)] <- 0
+base_inicial$TRX_COMIDA[is.na(base_inicial$TRX_COMIDA)] <- 0
+base_inicial$TRX_BOTICA[is.na(base_inicial$TRX_BOTICA)] <- 0
+base_inicial$TRX_BODEGAS[is.na(base_inicial$TRX_BODEGAS)] <- 0
+base_inicial$TRX_GRIFO[is.na(base_inicial$TRX_GRIFO)] <- 0
+
+# Creacion de la variable días por mes a partir de días y meses
+base_inicial$DIAS_POR_MES <- base_inicial$DIAS_TC/base_inicial$MESES_TC
+
+# Selección de las variables
+library(dplyr)
+base_inicial %>% select(RUBROS_TC ,COMERCIOS_TC ,DIAS_POR_MES,
+                        TRX_MERCADO ,TRX_ROPA ,TRX_TRANSPORTE ,
+                        TRX_COMIDA ,TRX_BOTICA ,TRX_BODEGAS ,
+                        TRX_GRIFO ) -> datos
+
+
+
+# Para cada una de las preguntas comente los resultados 
+# obtenidos. Use donde sea necesario set.seed(2021)
+
+# 1. Realice un análisis descriptivo y exploratorio de los 
+#    datos (3 puntos)
+
+summary(datos)
+#Podemos observar que los datos estan en diferente magnitud, por lo tanto tendremos que estandarizarlos.
+
+# Detectando y graficando los % de datos perdidos  
+plot_missing(datos,ggtheme=theme_minimal())+labs(title="Datos perdidos")  
+#Verificamos que no no hay datos perdidos, por lo tanto procederemos con el estudio de clusters.
+
+
+# 2. Aplique un análisis cluster jerárquico y por lo menos una
+#    técnica de partición. 
+#    De las técnicas aplicadas escoja la que considere la 
+#    mejor solución (Justifique su respuesta)
+#    Para la técnica elegida, indique el número de individuos 
+#    por cluster y presente un diagrama de líneas que permita
+#    describir el patrón de cada uno de los clusters. 
+#    Describa el patrón de cada uno de los clusters. (17 puntos)
+
+###################################
+# CLUSTER JERARQUICO AGLOMERATIVO #
+###################################
+
+#ESTANDARIZAMOS LOS DATOS 
+datos.est <- as.data.frame(scale(datos))
+summary(datos.est)
+#Verificamos que los datos estan casi en la misma escala, ya que sus valores estan en un rango no muy lejano.
+
+#CALCULAMOS LA MATRIZ DE DISTANCIA EUCLIDIANA
+d <- dist(datos.est, method = "euclidean")  
+
+# Visualizamos un peque�o subconjunto de la matriz de distancia anterior
+round(as.matrix(d)[1:10, 1:10], 1)
+
+#USAREMOS EL METODO DE ENLACE PROMEDIO
+res.hc <- hclust(d, method = "average" ) 
+
+# PROCEDIMIENTO DE AGRUPAMIENTO INDICANDO INDIVIDUOS
+res.hc$merge 
+#Se observa:
+#  En la 1era etapa se agrupa el individuo 2925 y 4798
+#  En la 2da etapa se agrupa el individuo 2740 y 3224
+#  .
+#  .
+#  .
+#  En la 14va etapa se agrupa el individuo 3205 con el 7mo cluster que serian los individuos 1896 y 2992
+#  y asi sucesivamente.
+
+# INDICAMOS A QUE DISTANCIA SE AGRUPAN LOS INDIVIDUOS Y CON CUANTOS CLUSTER TRABAJAREMOS
+res.hc$height
+
+alturas <- data.frame(etapa=1:4999,distancia=res.hc$height)
+library(ggplot2)
+ggplot(tail(alturas,10)) + aes(x=etapa,y=distancia)  +
+  geom_point() + geom_line()  + 
+  scale_x_continuous(breaks=seq(1,4999))+ 
+  geom_vline(xintercept = 4996,col="red",lty=2) + 
+  theme_bw()
+#A mi criterio el salto ligeramente brusco ocurre desde la distancia  15.14 hacia adelante, ya que es 
+#aproximadamente un salto de 2, por lo tanto se trabajar� con 4 clusters.
+
+#GRAFICANDO LOS CLUSTER APOYADO DE LOS ACP
+GRUPO <- cutree(res.hc, k = 4)
+GRUPO                           
+#1er individuo pertenece al cluster1
+#2do individuo pertenece al cluster1
+#etc...
+
+fviz_cluster(list(data = datos.est, cluster = GRUPO),
+             palette = c("#2E9FDF",  "#E7B800","GREEN","BLACK"),
+             ellipse.type = "convex", 
+             repel = F, 
+             show.clust.cent = FALSE, ggtheme = theme_minimal())
+#Podemos observar que no hay superposicion de clusters por lo tanto esta bien formado nuestros grupos, pero
+#hay un clusters que esta formado por solo una observacion, y es un problema que tiene
+#la t�cnica cluster, que son sensibles a los outliers.
+
+
+# DIAGRAMA DE L�NEAS DE CLUSTER POR VARIABLE
+
+# JUNTAMOS EL ARCHIVO DATOS CON LA COLUMNA GRUPOS, ya que a partir de esto podemos 
+#deducir a que cluster pertenece un nuevo individuo haciendo un modelo de regresi�n lineal.
+datos.j <- cbind(datos.est,GRUPO)   
+str(datos.j)
+
+datos.j$GRUPO <- factor(datos.j$GRUPO) #la columna GRUPO lo convertimos a factor 
+str(datos.j)
+
+# Diagrama de lineas de PROMEDIOS por cluster
+library(dplyr)
+
+#agrupame los datos por cluster y saca el promedio por cada variable 
+datos.j %>%   
+  group_by(GRUPO) %>%
+  summarise_all(list(mean)) -> medias
+medias
+
+#saca el promedio de cada variable
+datos.j %>% select(-GRUPO) %>%
+  summarise_all(list(mean)) -> general
+general
+
+#creamos un cluster llamado general
+general <- cbind(GRUPO="general",general)
+general
+
+#complementamos la fila general a las filas medias
+medias  <- as.data.frame(rbind(medias,general))   
+medias
+
+# Convirtiendo la data formato tidy
+#pasar de columnas a filas 
+library(tidyr)
+gathered_datos.j <- gather(data  = medias,
+                           -GRUPO,
+                           key   = variable, 
+                           value = valor) 
+
+gathered_datos.j                                
+
+library(ggplot2)
+ggplot(gathered_datos.j) + aes(x=variable,y=valor,color=GRUPO) + 
+  geom_point() + geom_line(aes(group = GRUPO)) +
+  theme_bw() +
+  theme(legend.position = "bottom",legend.title=element_blank()) +
+  labs(title="Diagrama de l�neas de Cluster por Variable",
+       x="Variable",y="") + ylim(-2.5,20) +
+  scale_colour_discrete("Cluster") 
+
+#podemos observar que la variable DIAS_POR_MES tiene un comportamiento similar en el cluster 3 y 4.
+#podemos observar que la variable TRX_BODEGAS,TRX_BOTICAS Y TRX_COMIDAS tienen un comportamiento similar 
+#en el cluster 1 y 2.
+#podemos observar que la variable TRX_ROPA tiene un comportamiento similar en el cluster 2 y 3.
+
+
+############################
+### METODOS DE PARTICION ###
+############################
+
+#USANDO EL CRITERIO DEL GRAFICO DE SILUETAS
+windows()
+library(cluster)
+library(tictoc)
+tic()
+set.seed(2021)
+diss.datos <- daisy(datos.est)
+par(mfrow=c(1,3))
+for(h in 2:4){
+  clu=kmeans(datos.est,h)
+  plot(silhouette(clu$cluster,diss.datos))
+}
+toc()
+
+#el promedio de todos los indices de silueta con 2 clusters  es 0.36, y es el mayor valor entre
+# 3 o 4 cluster, por lo tanto se trabajara solo con 2 clusters.
+
+####################################
+# 1. Usando kmeans() con 2 cluster #
+####################################
+set.seed(2021)
+km <- kmeans(datos.est, 
+             centers=2,      
+             iter.max = 100, 
+             nstart = 25,
+             algorithm = "Lloyd")    
+
+
+# Suma de cuadrados Total dentro de cada cluster
+km$tot.withinss 
+#Promedios
+km$centers
+
+
+######################################
+# 2. Usando kmeanspp() con 2 cluster #
+######################################
+library(LICORS)
+set.seed(2021)
+kmpp <- kmeanspp(datos.est, 
+                 k=2, 
+                 start="random",
+                 nstart = 25,
+                 iter.max=100)
+
+
+# suma de cuadrados Total dentro de cada cluster
+kmpp$tot.withinss    
+#promedios
+kmpp$center
+
+
+#############################################
+# 3. Usando K-MEANS JERARQUICO con 2 cluster#
+#############################################
+res.hk <- hkmeans(datos.est, 2,
+                  hc.metric = "euclidean",
+                  hc.method = "ward.D2",
+                  iter.max = 10)
+
+# suma de cuadrados Total dentro de cada cluster
+res.hk$tot.withinss    
+#promedios
+res.hk$center
+
+
+#criterios para escoger un metodo de particion:
+# --> metodo con menor SCIntraTotal (tot.withinss) : LAS 3 TECNICAS TIENEN UN SCIntraTotal=39319.
+# --> metodo que por fila tenga promedios m�s diferentes: POR LAS 3 TECNICAS SE OBTIENEN CASI EL MISMO 
+#                                                         PROMEDIO, CON UNA LIGERA VARIACION EN LA TECNICA DE
+#                                                         K-MEANS JERARQUICO.
+
+#por tales criterios escogeremos el m�todo K-means Jerarquico.
+
+#N�mero de individuos por cluster
+res.hk$size
+#El primer cluster esta conformado por 3688 individuos, mientras que el segundo cluster esta conformado por
+#1312 individuos.
+
+#el grafico de cluster , por ACP
+library(factoextra)
+fviz_cluster(res.hk, data = datos.est, ellipse.type = "convex") +
+  theme_classic()
+
+
+#DIAGRAMA DE L�NEAS DE CLUSTER POR VARIABLE
+library(dplyr)
+datos.res.hk <- cbind(datos.est,GRP3=factor(res.hk$cluster))
+str(datos.res.hk)
+
+#agrupando los datos por cluster y sacando el promedio por cada variable 
+datos.res.hk %>%   
+  group_by(GRP3) %>%
+  summarise_all(list(mean)) -> medias3
+medias3
+
+#promedio de cada variable
+datos.res.hk %>% select(-GRP3) %>%
+  summarise_all(list(mean)) -> general3
+general3
+
+#creamos un cluster llamado general
+general3 <- cbind(GRP3="general3",general3)
+general3
+
+#complementamos la fila general a las filas medias
+medias3  <- as.data.frame(rbind(medias3,general3))   
+medias3
+
+#pasar de columnas a filas 
+library(tidyr)
+gathered_datos.k3 <- gather(data  = medias3,
+                            -GRP3,
+                            key   = variable, 
+                            value = valor) 
+
+gathered_datos.k3                               
+
+library(ggplot2)
+ggplot(gathered_datos.k3) + aes(x=variable,y=valor,color=GRP3) + 
+  geom_point() + geom_line(aes(group = GRP3)) +
+  theme_bw() +
+  theme(legend.position = "bottom",legend.title=element_blank()) +
+  labs(title="Diagrama de l�neas por Variable",
+       x="Variable",y="") + ylim(-1,1.5) +
+  scale_colour_discrete("Cluster") 
+
+#Podemos observar que el patron de las variables para el cluster1 como para el cluster2 no tienen un 
+#comportamiento similar al promedio, ni entre ellos. 
+#Pero podemos decir que el cluster2 tiene un promedio por cada variable m�s diferente que el cluster1 
+#respecto al promedio general. 
+
+
+
+
+
+
+
+

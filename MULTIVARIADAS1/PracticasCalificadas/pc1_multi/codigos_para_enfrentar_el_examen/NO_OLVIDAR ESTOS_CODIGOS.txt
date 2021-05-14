@@ -1,0 +1,2 @@
+#setwd(dirname(rstudioapi::getActiveDocumentContext()$path))# Cambiar el directorio de trabajo
+#getwd()#ubicacion del directorio

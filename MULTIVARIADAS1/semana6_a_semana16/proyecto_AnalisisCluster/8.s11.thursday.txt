@@ -1,0 +1,106 @@
+table(datos.j$grp)
+round(prop.table(table(datos.j$grp)),2)
+###
+###
+#1. Catálogo de invierno. Avance de temporada
+###
+###
+#NEARZEROVARIANCE()####asi como bartlet AF  aqui se utiliza este filtro.
+#Para hacer un modelo predictivo
+#Las v predictoras, deben tener poca o alta variancia?
+#alta variablidad 
+# 7. Comparando dos dendogramas -------------------------------
+library(dendextend)
+
+# Calculando la matriz de distancia
+res.dist <- dist(datosc, method = "euclidean")
+
+# Calculando 2 clusters jerárquicos aglomerativos
+hc1 <- hclust(res.dist, method = "average")
+hc2 <- hclust(res.dist, method = "ward.D2")
+
+# Creando dos Dendrogramas
+dend1 <- as.dendrogram(hc1)
+plot(dend1)
+
+dend2 <- as.dendrogram(hc2)
+plot(dend2)
+
+# Creando una lista de Dendrogramas
+dend_list <- dendlist(dend1, dend2)
+
+tanglegram(dend1, dend2)
+tanglegram(dend1, dend2,
+           highlight_distinct_edges = FALSE, # Turn-off dashed lines
+           common_subtrees_color_lines = FALSE, # Turn-off line colors
+           common_subtrees_color_branches = TRUE, # Color common branches 
+           main = paste("entanglement =", round(entanglement(dend_list), 2))
+           )
+
+# Entanglement es una medida entre 1 (full entanglement) 
+# y 0 (no entanglement). 
+# Un bajo coeficiente de entanglement corresponde a 
+# un buen alineamiento
+##########
+##########
+############
+##########
+# Cladogram
+library(ape)
+d  <- dist(datosc, method = "euclidean")
+hc <- hclust(d, method = "ward.D2")
+
+plot(hc, cex = 0.6, hang=-1)
+
+plot(as.phylo(hc), type = "cladogram", cex = 0.6, 
+     label.offset = 0.5)
+
+# Unrooted
+plot(as.phylo(hc), type = "unrooted", cex = 0.6,
+     no.margin = TRUE)
+
+library(igraph)
+fviz_dend(hc,k=3,k_colors="jco",
+          type="phylogenic", repel=TRUE)
+
+# Fan
+plot(as.phylo(hc), type = "fan")
+
+fviz_dend(hc, cex= 0.5, k=3, k_colors="jco",
+          type="circular")
+
+
+# Radial
+plot(as.phylo(hc), type = "radial")
+
+
+# Dividir el dendrograma en 3 clusters
+colors <- c("red", "blue", "green", "black")
+clus4  <- cutree(hc, 3)
+plot(as.phylo(hc), type = "fan", tip.color = colors[clus4],
+     label.offset = 1, cex = 0.7)
+
+
+# Cambiando la apariencia
+plot(as.phylo(hc), type = "cladogram", cex = 0.6,
+     edge.color = "steelblue", edge.width = 2, edge.lty = 2,
+     tip.color = "steelblue")
+#########
+##########
+############
+############
+############
+library(aplpack)
+aplpack::faces(datosc)
+aplpack::faces(datosc,face.type=0)
+aplpack::faces(datosc,face.type=1)
+aplpack::faces(datosc,face.type=2)
+
+
+library(TeachingDemos)
+TeachingDemos::faces(datosc)
+
+
+# Otros gráficos univariados
+# Gráfico de estrellas con la función stars() de graphics
+stars(datosc,labels=seq(1,21))

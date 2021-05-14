@@ -1,0 +1,5 @@
+debemos crearnos una cuenta en :
+#requisito:
+#para publicar nuestro libro
+
+Bookdown: Homebookdown.org

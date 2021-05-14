@@ -1,0 +1,47 @@
+library(FactoMineR) 
+
+res.ca <- CA(datos.acs,ncp=2,graph=FALSE)
+
+res.ca
+
+#--------------------------------------------------------------
+# Scree Plot de los Autovalores
+res.ca$eig
+
+eig.val <- get_eigenvalue(res.ca)
+eig.val
+
+fviz_screeplot(res.ca)
+
+# fviz_screeplot(fit) + geom_hline(yintercept=33.33, linetype=2, color="red")
+
+fviz_screeplot(res.ca, addlabels = TRUE, ylim = c(0, 100))
+
+#--------------------------------------------------------------
+# Interpretación de los Indicadores del ACS
+
+summary(res.ca,nb.dec = 3, ncp = 2)
+# El 100% de la Inercia Total, se puede descomponer en
+# min(número de filas,número de columnas) -1 componentes o
+# dimensiones
+#------------------------------------------------------------
+# Resultados extendidos, tomar las coordenadas, contribuciones 
+# absolutas y relativas.
+# En summary se tienen dos indicadores importantes: 
+# Contribución Absoluta (ctr)
+# Contribución Relativa (cos2)
+
+# Interpretación de la Contribución Absoluta (ctr)
+# Por ejemplo: para la fila BAJO y la dimensión 1 se tiene 
+# una ctr = 47.655
+# El 47,65% de la inercia de la dimensión 1 es explicada 
+# por la fila BAJO
+# 
+# Interpretación de la Contribución Relativa (cos2)
+# Por ejemplo: para la fila BAJO y la dimensión 1 se tiene 
+# una cos2 = 0.903
+# El 90,3% de la inercia de la fila BAJO es explicada 
+# por la dimensión 1
+
+# Con la funcion plot() sobre un objeto de clase ca se 
+# obtiene el biplot.

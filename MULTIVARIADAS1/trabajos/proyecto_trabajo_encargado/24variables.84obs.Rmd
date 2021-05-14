@@ -1,0 +1,443 @@
+---
+title: "CALIDAD DEL AGUA DEL RIO RIMAC"
+author: "EQUIPO 3"
+date: "31/3/2021"
+output:
+  html_document:
+    df_print: paged
+  linkcolor: blue
+  pdf_document: default
+  urlcolor: blue
+---
+
+
+
+**UNIVERSIDAD NACIONAL AGRARIA LA MOLINA**
+
+
+
+
+Table: table
+
+  **PROFESOR: JESUS SALINAS** |  **FACULTAD EYP** | 
+   ----------------------| ----------------------|
+ ![](D:/OTROS/FOTOS/unalm.jpg){width=20%} | ![](D:/OTROS/FOTOS/facu.jpg){width=15%}
+
+
+**INTEGRANTES**
+
+LUIS EDGAR GUTIERREZ SALDANA
+
+CHRISTIAN CRUZATE 
+
+JENNY MONTOYA
+
+![](D:/OTROS/FOTOS/machine.learning.png)
+
+
+# 2.OBJETIVOS {-}
+El objetivo principal de este estudio es determinar patrones de variación temporal de
+la calidad de agua en el sector de la bocatoma de La Atarjea, Río Rímac.
+Los objetivos específicos son:
+
+1)  Identificar patrones temporales de variación de la calidad de agua.
+
+2)  Examinar la variación temporal de cada uno de los parámetros de la calidad de agua.
+
+3)  Identificar los parámetros de calidad de agua más importantes o relevantes.
+
+4)  Identificar relaciones entre parámetros de calidad de agua.
+
+
+# 3.APLICANDO CLUSTER JERARQUICO {-}
+
+
+
+```{r}
+library(readxl)
+datosc <- read_excel("dato.24variables.84obs.xlsx")
+
+```
+
+Estructura:
+Tenemos 24 variables de formato numerico  y 1 variable en formato character(meses)
+```{r}
+str(datosc)
+```
+Convirtiendo en un dataframe:
+```{r}
+datosc=as.data.frame(datosc)
+```
+
+```{r}
+rownames(datosc)<- datosc$meses
+```
+Eliminanos la variable meses(cualitativa)
+```{r}
+datosc$meses=NULL
+head(datosc,3)
+```
+**ANALISIS EXPLORATORIO**
+```{r}
+#Verificando si hay valores faltantes:
+#Detectando y graficando los % de datos perdidos
+#No hay valores perdidos en ninguna variable
+library(DataExplorer)
+library(ggplot2)
+plot_missing(datosc,ggtheme=theme_minimal())
+```
+
+**ANALISIS DESCRIPTIVO**
+```{r}
+library(zoo)
+library(PerformanceAnalytics)
+library(xts)
+library(graphics)
+#pearson "escala de intervalo"#es mejor si el tamaño de muestra es mas grande.
+chart.Correlation(datosc, histogram=TRUE, method = c("pearson"), pch=20) 
+library(corrplot)
+correlacion<-round(cor(datosc), 1)
+
+corrplot(correlacion, method="number", type="upper")
+
+```
+
+
+Se observa que 20  variables  sus coeficientes correlacion de pearson es alto, es decir las variables 
+se encuentran altamente correlacionados excepto   las variables (PH),oxigeno disuelto(OD)
+,coliformes termotolerables(cote)y coliformes totales(coto) 
+son las que tienen una menor correlacion de pearson,
+es decir estas ultimas variables se encuentran  poco correlacionados con las demas variables.
+
+Deseamos  que exista una alta correlacion entre las variables para poder aplicar
+la tecnica multivariada no supervisada ANALISIS FACTORIAL.
+
+
+
+
+
+```{r}
+#estandarizamos los datos porque las variables se encuentran en diferentes escalas
+ datosc <- as.data.frame(scale(datosc))
+```
+
+**CLUSTER JERARQUICO AGLOMERATIVO**
+
+Distancia euclidiana  y metodo de enlace Ward.D2
+
+```{r}
+
+
+#-----------------------------------
+#calculando la matriz de disimilaridad
+
+
+
+
+d <- dist(datosc, method = "euclidean")
+
+#el metodo ward.d2 ,para reconstruir la matriz distancia
+res.hc <- hclust(d, method = "ward.D2" ) 
+```
+
+```{r}
+res.hc$merge
+#formacion de "n" cluster hasta 1 cluster
+
+#observamos  que son 83 etapas:
+
+#En la etapa 1 
+#el individuo 32 y el individuo 34 forman un cluster
+
+#En la entapa 2
+#el individuo 81 y el individuo 82 forman un cluster
+
+#y asi sucesivamente hasta llegar a la etapa 83 donde se  
+#forma un solo  cluster
+```
+```{r}
+#estructura:
+str(res.hc)
+
+
+options(scipen = 999)#sin notacion cientifica
+ 
+```
+
+```{r}
+#distancia 
+ res.hc$height
+```
+
+**EL NUMERO DE CLUSTER**
+
+
+Hemos considerado que un cambio brusco seria en la etapa 82
+
+entonces el numero de cluster es 2
+```{r}
+
+library(ggplot2)
+alturas <- data.frame(etapa=1:83,distancia=res.hc$height)#distancia 
+alturas
+
+```
+```{r}
+#screeplot con las distancias
+
+ggplot(alturas) + aes(x=etapa,y=distancia)  +
+  geom_point() + geom_line()  + 
+  scale_x_continuous(breaks=seq(1,20)) + 
+  geom_vline(xintercept = 82,col="red",lty=2) + 
+  theme_bw() 
+```
+
+¿como se agrupan los meses de apartir de enero 2009 hasta diciembre de 2015?
+
+```{r}
+# Dividir en 2 clusters
+
+#La asignacion de cada elemento(mes) a cada cluster
+
+grp <- cutree(res.hc, k = 2)
+grp 
+
+
+table(grp)
+
+```
+
+
+Hay en total 84 meses 
+
+clauster1:
+
+hay 66 meses 
+
+cluster2:
+
+hay 18 meses
+
+
+
+**DEDONGRAMA**
+
+Visualizacion de los 2 cluster:
+
+```{r}
+
+
+
+library(factoextra)
+fviz_dend(res.hc, k=2, cex = 0.5,
+          k_colors = rainbow(2),   # Colores del arco iris
+          color_labels_by_k = TRUE, 
+          rect=T)
+
+
+
+
+```
+
+
+Por el criterio del screpplot o el codo pude aver formado 4 cluster pero observando 
+minuciosamente no me conviene formar 4 cluster, para que un solo cluster este solo un dato
+de igual manera sucede con 3 cluster, por eso se eligimos 2 cluster.
+
+**GRAFICA#ACP con CLUSTER**
+
+**GRAFICO 1** 
+```{r}
+
+
+#Se puede apreciar que con 2 componentes retenemos 56.7% de la inercia total y podemos explicar 
+#todas las variables.
+library(factoextra)
+fviz_cluster(list(data = datosc, cluster = grp),
+             palette =c("#DB1515", "#3722BF") ,
+             ellipse.type = "convex", # Concentration ellipse
+             repel = T, # Avoid label overplotting (slow)
+             show.clust.cent = FALSE, ggtheme = theme_bw())
+```
+
+
+
+**Insumo para un modelo predictivo como regresion lineal**
+
+```{r}
+# Juntando el archivo de "datos" con la columna de "cluster"
+datos.j <- cbind(datosc,grp)
+ 
+```
+
+
+
+```{r}
+#convirtiendo en factor la varaible "grp" 
+datos.j$grp <- factor(datos.j$grp)
+
+#Si deseamos exportar :
+# write.csv(datos.j,"Compras con Jerarquico Aglomerativo.csv")
+```
+
+**Analisis Factorial:**
+
+En las variables(24)
+
+ANALISIS EXPLORATORIO :
+```{r}
+library(GGally)
+ggcorr(datosc)
+
+#Se puede observar  que entre las 24 variables, 
+#hay correlaciones muy altas , correlaciones altas  y correlaciones medias.
+#esto podria traer problemas de multicolinealidad.
+```
+
+
+
+**Prueba de Esfericidad de Bartlett**
+
+```{r}
+
+library(rela)
+library(ggplot2)
+library(psych)
+correlaciones<- corr.test(datosc) #correlaciones de pearson
+r<-as.matrix(round(correlaciones$r,2))  #matriz de correlaciones con 2 decimales
+options(scipen=999)#sin notacion cientifica
+#n<-dim(datosc)   #12 filas y  24 columnas                    
+cortest.bartlett(r,n=nrow(datosc))
+```
+
+Prueba de Esfericidad de Bartlett
+
+Prueba de Esfericidad de Bartlett
+
+Ho: |Rp|=1 (las correlaciones teóricas entre cada par de variables es nulo)  
+
+H1: |Rp|≠1 (las correlaciones teóricas entre cada par de variables NO es nulo)
+
+
+conclusion:
+
+Se rechaza la H0, se puede afirmar que las correlaciones pearson
+teóricas entre cada par de variables NO es nulo,es decir nuestras
+variables estan correlacionadas.
+
+en otras palabras nuestra matriz correlacion pearson es diferente
+a la matriz identidad podemos realizar ANALISIS FACTORIAL.
+
+```{r}
+library(psych)
+correlaciones<- corr.test(datosc) # se crea la matriz de correlaciones  
+
+
+#correlaciones$r                  # matriz correlaciones,las correlaciones 
+                                  # entre las variables son altas
+Rp=det(round(correlaciones$r,2))   ;Rp
+
+```
+
+Si la determinante de la matriz correlacion es muy 
+pequeña pero no es cero indica que mis variables
+estan altamente intercorrelaciones.
+
+https://www.uv.es/ceaces/multivari/factorial/matriz.htm
+
+
+
+
+
+**INDICADOR KAYSER-MEYER-OlkINN KMO y MSA**
+
+```{r}
+library(psych)
+KMO(datosc)     
+
+#Por otro lado el indicador "kmo" es igual 0.85 
+#que indica que es aceptable trabajar con 24 varaibles.
+```
+
+Se puede descartar  las variables "OD" y "PH" porque es menor a 0.5 y se considera inaceptable,
+Pero como el ministerio de medio ambiente los utiliza frecuentemente lo vamos considerar.
+
+Para el uso dosmestico del agua el "Ph" tiene que ser neutro por lo cual esta no se puede 
+descartar del analisis. 
+```{r}
+#datosc$OD=NULL
+#datosc$pH=NULL
+```
+
+
+
+```{r}
+
+KMO(datosc)
+```
+
+```{r}
+library(psych)
+facto.con.rota <- principal(r=datosc,
+                            nfactors=2,
+                            rotate="varimax")#matriz de correlacion
+```
+
+Autovalores
+```{r}
+facto.con.rota$values
+```
+
+
+Cargas factoriales
+```{r}
+facto.con.rota$loadings
+```
+
+Con 2 componentes se retiene 56.8 % de la inercia total.
+
+¿que variables pertenecen a cada factor?
+
+```{r}
+library(psych)
+fa.diagram(facto.con.rota)
+```
+
+```{r}
+
+facto.con.rota$communality
+```
+
+Las variables; oxigeno disuelto(OD), coliformes termotolerables(Cote) , coliformes totales(coto), potencial de hidrogeno(Ph)
+no aportan mucho en mi estudio de la caliadad del agua del rio rimac dado que su comunalidad esta cerca a cero.
+
+
+
+**CARGAS FACTORIALES**
+```{r}
+
+facto.con.rota$loadings
+```
+**componente 1:**
+
+Mn , Pb,As,Al,Fe,Turb ,Zn, Cu,Cd,Temp,"OD" y"cote" 
+
+**componente 2:**
+
+Ce, alcal,Sd,DT,NO3,S04,CLs,PO4,Caudal,NO2,"Ph" y  "coto" 
+
+```{r}
+library(ade4)
+load <- facto.con.rota$loadings[,1:2]
+s.corcircle(load,grid=FALSE)
+
+```
+
+
+Cuando el caudal aumenta tambien aumenta el cote y disminuye Ph,Ce,SD,
+Alcal,DT,cls,SO4.NO3,NO2 y PO4 ademas no es afectada por la temperatura
+(temp),Turb,OD,Cu,Al,Fe,Mn,Pb,Cd ,Zn,As y coto.
+Por otro lado cuando aumenta la temperatura aumentan el 
+Turb,OD,Cu,Al,Fe,Mn,Pb,Cd ,Zn,As y coto, la tempertura no afecta ;caudal, 
+Ph,Ce,SD,Alcal,DT,cls,SO4.NO3,NO2 y PO4.
+

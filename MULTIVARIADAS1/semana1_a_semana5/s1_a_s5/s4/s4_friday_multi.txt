@@ -1,0 +1,67 @@
+library(psych)
+facto.con.rota <- principal(r=datos.facto,
+                            nfactors=2,
+                            rotate="varimax")
+
+str(facto.con.rota)
+
+facto.con.rota$values
+facto.con.rota$communality     # Comunalidad
+facto.con.rota$uniquenesses    # Especificidad
+facto.con.rota$loadings
+
+library(DandEFA) 
+dandelion(facto.con.rota$loadings,
+          bound = 0.7,
+          mcex = c(1,1),
+          palet = c("blue","red"))
+
+facto.con.rota$scores
+
+mean(facto.con.rota$scores[,1])
+mean(facto.con.rota$scores[,2])
+var(facto.con.rota$scores[,1])
+var(facto.con.rota$scores[,2])
+cor(facto.con.rota$scores)
+View(cbind(datos.facto,
+           as.data.frame(scale(datos.facto)),
+           facto.con.rota$scores))
+
+# Gráfica de variables sobre el primer plano de componentes
+load <- facto.con.rota$loadings[,1:2]
+plot(load, pch=20, 
+     xlim=c(-1,1), 
+     ylim=c(-1,1),
+     xlab="Factor 1",
+     ylab="Factor 2") 
+abline(h=0,lty=3)
+abline(v=0,lty=3)
+text(load,pos=1,labels=names(datos.facto),cex=0.8) # add variable names
+
+# Gráfica de circulo de correlaciones
+library(ade4)
+load <- facto.con.rota$loadings[,1:2]
+s.corcircle(load,grid=FALSE)
+fa.diagram(facto.con.rota)
+
+# Almacenar los datos y los resultados de los scores en un
+# archivo CSV
+head(facto.con.rota$scores,10)
+
+summary(facto.con.rota$scores)
+var(facto.con.rota$scores)
+
+salida.facto <- cbind(datos.facto,facto.con.rota$scores)
+salida.facto
+str(salida.facto)
+write.csv(salida.facto,"hatco-datos-factorial-con-acp.csv")
+
+# Gráfica de Matriz de Correlación entre  Variables y Factores
+library(psych)
+cor.plot(cor(salida.facto),
+         main="Mapa de Calor", 
+         diag=TRUE, number = F,
+         show.legend = TRUE)       
+
+library(GGally)
+ggpairs(salida.facto)

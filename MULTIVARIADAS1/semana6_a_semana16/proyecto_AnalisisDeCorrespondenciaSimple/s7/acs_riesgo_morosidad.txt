@@ -1,0 +1,46 @@
+################################
+# 11. ACS de una base de datos #
+################################
+library(foreign)
+datos <- read.spss("Riesgo_morosidad.sav", 
+                   use.value.labels = T,  
+                   to.data.frame=TRUE)
+attach(datos)   
+
+table(nrodepen)
+table(dpto)
+#vriables que me interesan en este caso es 'dpto' y 'nrodepen'
+addmargins(table(dpto,nrodepen))
+#priemro lo llevo a una tabla,luego lo convierto en una matrix
+datos.acs.b <- as.matrix(table(dpto,nrodepen))
+datos.acs.b
+############################
+#todo lo que viene es igual#
+############################
+library(FactoMineR) 
+res.ca.b <- CA(datos.acs.b,ncp=2,graph=FALSE)
+res.ca.b$eig#autovalores#0.10762638+0.00281088=0.11043726#inercia total
+library(factoextra)
+eig.val <- get_eigenvalue(res.ca.b)
+eig.val#autovalores
+#eig.val[,1]
+#   Dim.1      Dim.2      Dim.3      Dim.4      Dim.5 
+#0.10762638 0.00281088 0.00075654 0.00012526 0.00000279 
+sum(eig.val[c(1,2),1])#inercia total#0.10762638+0.00281088 =0.11043726#inercia total
+fviz_screeplot(res.ca.b)
+summary(res.ca.b,nb.dec = 3, ncp = 2)#PIURA,COLUMNA 0 ,estan cerca al origen.
+res.ca.b$row$inertia
+sum(res.ca.b$row$inertia)#inercia total con 5 componentes#0.111#summary(res.ca.b,nb.dec = 3, ncp = 2)
+sum(res.ca.b$eig[,1])#inercia total con 5 componentes#0.111
+#inercia total#0.111,si utilizaria 5 componentes y siguiendo la regla
+#min(filas,columnas)-1=5,pero por buenas practicas son 2 componentes ademas
+#si me fijo en la variblidad retenida 
+#con dos componentes retengo 99.2% de variabilidad total.
+#res.ca.b$row$inertia
+#[1] 0.029097 0.037206 0.037576 0.004783 0.002249 0.000411
+#----------------------------------------------------------
+#
+#----------------BIPLOT------------
+fviz_ca_biplot(res.ca.b, repel = T)
+#
+#---------------------------------------------------------

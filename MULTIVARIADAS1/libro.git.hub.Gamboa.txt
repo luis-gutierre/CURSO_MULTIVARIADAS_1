@@ -1,0 +1,6 @@
+https://github.com/jeguns/EP3071/blob/master/3%20-%20An%C3%A1lisis%20de%20regresi%C3%B3n%20log%C3%ADstica%20-%20caso%20de%20estudio.R
+
+
+
+
+https://github.com/jeguns/EP3071/blob/master/3%20-%20An%C3%A1lisis%20de%20regresi%C3%B3n%20log%C3%ADstica.R

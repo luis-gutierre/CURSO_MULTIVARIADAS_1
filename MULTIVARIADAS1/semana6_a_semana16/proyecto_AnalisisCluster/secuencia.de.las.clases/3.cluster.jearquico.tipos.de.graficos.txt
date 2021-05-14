@@ -1,0 +1,95 @@
+#Si deseamos estandarizar
+#datos.s <- as.data.frame(scale(datosc))#datos originales#estan en la misma escala 1-7
+
+
+NO ESTANDAARIZO PORQUE MIS VARIABLES ESTAN EN UNA ESCALA DE 1-7
+
+
+library(foreign)
+datosc <- read.spss("compras-cluster.sav",
+                    use.value.labels=TRUE, 
+                    max.value.labels=TRUE,
+                    to.data.frame=TRUE)
+
+attr(datosc,"variable.labels") <- NULL
+datosc$caso <- NULL
+str(datosc)
+
+
+
+#TIPOS DE GRAFICAS
+
+############
+# Cladogram#
+############
+
+#INSUMO:
+
+##############################################################
+library(ape)
+d  <- dist(datosc, method = "euclidean")
+hc <- hclust(d, method = "ward.D2")#metodo de enlace ward.D2
+##############################################################
+
+#FORMA1:
+plot(hc, cex = 0.6, hang=-1)
+#FORMA2:
+plot(as.phylo(hc), type = "cladogram", cex = 0.6, 
+     label.offset = 0.5)
+
+#----------------------------
+
+###########
+# Unrooted#
+###########
+
+#FORMA1:
+plot(as.phylo(hc), type = "unrooted", cex = 0.6,
+     no.margin = TRUE)
+#FORMA2:
+library(igraph)
+library(factoextra)
+fviz_dend(hc,k=3,k_colors="jco",
+          type="phylogenic", repel=TRUE)
+#----------------------------
+
+######
+# Fan#
+######
+
+#FORMA1:
+plot(as.phylo(hc), type = "fan")
+
+#FORMA2:
+library(factoextra)
+fviz_dend(hc, cex= 0.5, k=3, k_colors="jco",
+          type="circular")
+
+#----------------------------
+
+#########
+# Radial#
+#########
+
+#FORMA 1:
+plot(as.phylo(hc), type = "radial")
+
+
+
+# Dividir el dendrograma en 3 clusters
+colors <- c("red", "blue", "green", "black")
+clus4  <- cutree(hc, 3)
+#1 2 1 3 2 1 1 1 2 2 2 1 2 3 1 3 1 3 3 2 1
+colors[clus4]
+#"red"   "blue"  "red"   "green" "blue"  "red"   "red"   "red"   "blue"  "blue"  "blue"  "red"   "blue"  "green" "red"  
+#"green" "red"   "green" "green" "blue"  "red"
+plot(as.phylo(hc), type = "fan", tip.color = colors[clus4],
+     label.offset = 1, cex = 0.7)
+#------------------------------
+
+# Cambiando la apariencia
+plot(as.phylo(hc), type = "cladogram", cex = 0.6,
+     edge.color = "steelblue", edge.width = 2, edge.lty = 2,
+     tip.color = "steelblue")
+
+#------------------------------

@@ -1,0 +1,62 @@
+# 2.a Visualizando la matriz de distancia con fviz_dist()
+fviz_dist(res.dist) 
+
+fviz_dist(res.dist, 
+          gradient = list(low = "#00AFBB", mid = "white", 
+                          high = "#FC4E07"))
+
+# 2.b Visualizando la matriz de distancia con corrplot()
+library(corrplot)
+corrplot(as.matrix(dist.eucl), 
+         is.corr = FALSE, 
+         method = "color")
+
+# 2.c Visualizando solo el triangulo superior
+corrplot(as.matrix(dist.eucl), is.corr = FALSE, 
+         method = "color",
+         order="hclust", type = "upper")
+
+#-------------------------------------------------------------
+# Mapas de calor y dendrograma 
+distan <- as.matrix(dist.eucl)
+heatmap(distan,xlab="Individuos",
+        ylab="Individuos", 
+        main="Mapa de Calor del Ejemplo de Compras")
+##################################################
+
+
+d <- dist(datosc, method = "euclidean")
+
+# method = euclidean, maximum, manhattan, canberra, 
+#          binary, minkowski
+
+as.matrix(d)[1:6, 1:6]
+
+#-------------------------------------------------------------
+# Cluster Jerárquico usando el método de enlace average
+res.hc <- hclust(d, method = "average" )
+
+# method = ward.D, ward.D2, single, complete, average, median
+
+res.hc
+
+str(res.hc)
+
+# Proceso de agrupamiento indicando los individuos
+res.hc$merge
+
+# Proceso de agrupamiento indicando los distancias
+res.hc$height
+head(res.hc$height)
+tail(res.hc$height)
+
+#-------------------------------------------------------------
+# Visualizar el dendrograma
+plot(res.hc, cex = 0.6, hang=-1)  # Opciones ó Argumentos
+
+rect.hclust(res.hc, k = 3, border = 2:5) # De segundo nivel
+
+# Dendograma con el paquete factoextra
+library(factoextra)
+
+fviz_dend(res.hc, cex = 0.5)

@@ -1,0 +1,130 @@
+#setwd(dirname(rstudioapi::getActiveDocumentContext()$path))# Cambiar el directorio de trabajo
+#getwd()#ubicacion del directorio
+#rm(list = ls()) #limpiar las variables
+dev.off()#limpia graficos
+datos.acp <- read.delim("hatco-acp.txt")
+
+str(datos.acp)
+
+# No considerar la primera columna Id
+datos.acp$id <- NULL
+# datos.acp <- datos.acp[,-1]
+
+str(datos.acp)
+
+#--------------------------------------------------------------
+# Análisis de Componentes Principales
+library(ade4)
+acp <- dudi.pca(datos.acp,           # datos.s , scale = F
+                scannf=FALSE, #presentacion
+                scale=T, center = T,   # Matriz de Correlación
+                nf=ncol(datos.acp))#¿cuantos compenentes quieres quedarte?
+                                   #en este caso lo pondre la misma cantidad de variables 
+                                   #en otras palabras,no me hagas reduccion de dimensionalidad
+#center = T, es decir le quitara la media y scale=T ,es decir lo dividira entre su desviacion.
+summary(acp)
+
+print(acp)
+
+# Valores propios (autovalores)
+acp$eig
+#2.5131167 + 1.7396167 +0.5975188+ 0.5297714+ 0.4156729+ 0.2043035
+#trabajando con la matriz correlacion,donde la variabilidad total es igual a 6,
+#es lo mismo que la cantidad de variables
+inertia.dudi(acp)
+
+# Vectores propios
+acp$c1
+#autovectores,sirve para reconstruir mi sistema
+#autovectores 0.3960-0.4790+...-0.4840
+#(z1,z2,z3,z4,z5,z6) variables estandarizadas
+#(y1,y2,y3,y4,y5,y6) componenetes principales
+####
+#y1=0.3960*z1-0.4790*z2+...-0.4840*z6
+#y2=
+#y3=
+#y4=
+#y5=
+#y6=-0.0326*z1-0.0785*z2+...+0.0394*z6
+############OTRA FORMA _2
+# Si se quiere estandarizar los datos
+# Aqui los datos ya estan estandarizados,entonces
+# scale= FALSE ,es decir no resta la media
+# center= FALSE, es decir no lo divide entre la desviacion estandar
+datos.s <- scale(datos.acp)
+####
+acp2 <- dudi.pca(datos.s ,           # datos.s , scale = F
+                scannf=FALSE, #presentacion
+                scale=F, center = F,   # Matriz de variancia y covarianza
+                nf=ncol(datos.s))
+acp2$c1
+summary(acp2)
+####comparando
+summary(acp2)
+summary(acp)
+#summary(acp2)
+#      Ax1     Ax2     Ax3     Ax4     Ax5 
+#   2.4880  1.7222  0.5915  0.5245  0.4115
+#summary(acp)
+# Ax1     Ax2     Ax3     Ax4     Ax5 
+#2.5131  1.7396  0.5975  0.5298  0.4157 
+#conclusion son similares los autovalores
+#ANALISIS DE COMPONENTES PRINCIPALES
+#(datos estandarizados matriz de COVARIANCIA )=(datos originales matriz de CORRELACION)
+#-----------------------------------------------------------------------------------
+#########################################
+# Gráfica de Valores propios - ScreePlot#
+#########################################
+################
+# Primera forma#
+################
+plot(acp$eig,type="b",pch=20,col="blue")
+##estamos graficando los autovalores,se le llama 'grafico de sedimentacion'-'scree plot'.
+#si deseamos aumentarle el titulo.
+plot(acp$eig,type="b",pch=20,col="blue",main='grafico de sedimentacion-scree plot')
+#####
+abline(h=1,lty=5,col="red")
+
+################
+# segunda forma#
+################
+library(ggplot2)
+ggplot(as.data.frame(acp$eig)) + 
+  aes(x=seq(1:6),acp$eig) + 
+  geom_point(color="red") + geom_line() + theme_bw() +
+  scale_x_continuous(breaks=seq(1:6)) +
+  labs(title="Scree-Plot",
+       x= "Componentes",
+       y= "Autovalor") +
+  geom_hline(yintercept = 1,lty=2,color="blue")
+
+################
+# tercera forma#
+################
+screeplot(acp, main ="Screeplot - Valores Propios")
+
+############### 
+# cuarta forma#
+###############
+library(factoextra)
+eig.val <- get_eigenvalue(acp)
+eig.val
+
+barplot(eig.val[, 2], names.arg=1:nrow(eig.val), 
+        main = "Autovalores",
+        xlab = "Componentes Principales",
+        ylab = "Porcentaje de variancias",
+        col ="steelblue")
+lines(x = 1:nrow(eig.val), eig.val[, 2], 
+      type="b", pch=19, col = "red")
+
+############### 
+# quinta forma#
+############### 
+library(factoextra)
+fviz_screeplot(acp, ncp=6)
+fviz_eig(acp, addlabels=TRUE, hjust = -0.3)
+
+fviz_eig(acp, addlabels=TRUE, hjust = -0.3,
+         barfill="white", barcolor ="darkblue",
+         linecolor ="red") + ylim(0,60) + theme_bw() + ylim(0.65)

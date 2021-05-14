@@ -1,0 +1,101 @@
+Reducción de dimensionalidad
+Muchas variables en un modelo
+1. Eliminar variables
+2. Transforma las variables
+3. Reduce la dimensionalidad -> ACP
+¿Cuántos de variables existen?
+1. La correlacion dentro del grupo alta
+2. La correlacion entre Xs de diferentes grupos debe ser baja
+
+Componentes -> Etiqueta (Conocimiento del Negocio)
+el objetivo es encontrar variables que esten altamente correlacionadas entre si
+
+Objetivos del ACP
+Generar nuevas variables 
+Reducir la dimension
+Eliminar las variables
+Facilitar la interpretacion
+
+LUIS:
+ 
+#1
+library(pacman)
+p_load(ade4,psych,car,matrixcalc,FactoMineR,factoextra,
+       PerformanceAnalytics,GGally,corrplot,caret,corrr,
+       funModeling,apaTables,ggplot2,scatterplot3d,readr)
+#2
+library(scatterplot3d) 
+
+set.seed(1) 
+datos <- matrix(rnorm(200 * 2), ncol = 2) 
+colnames(datos) <- c("X1", "X2") 
+datos[1:100, ] <- datos[1:100, ] + 2 
+datos[101:150, ] <- datos[101:150, ] - 2 
+plot(datos,pch=20)
+cor(datos)
+
+Nuevos valores (X1,X2) -> (Y1,Y2)
+Puntuaciones, Scores
+X1,.....,X10 -> Y1,.....Y10
+
+#3
+X1 <- c(2,2,3,4,5,5)
+X2 <- c(2,3,4,3,4,5)
+
+datos1 <- data.frame(X1,X2)
+
+attach(datos1)
+
+mean(X1)
+mean(X2)
+
+cor(X1,X2)
+library(ggplot2)
+ggplot(datos1, aes(X1,X2)) + geom_point() + 
+  expand_limits(x=c(0,6))  + expand_limits(y=c(0,6)) +
+  theme_bw()
+
+cov(datos1)
+
+(cov  <- cov(datos1))
+
+cov <- as.matrix(cov)
+
+ev <- eigen(cov)
+
+str(ev)
+
+(values <- ev$values)
+
+(vectors <- ev$vectors)
+
+class(vectors)
+
+Y1 <-  -0.8190675*X1 - 0.5736972*X2
+Y2 <-   0.5736972*X1 - 0.8190675*X2
+
+cbind(X1,X2,Y1,Y2)
+
+cor(X1,X2)
+cor(Y1,Y2)
+
+plot(Y1, 
+     Y2, 
+     xlab="Componente 1", 
+     ylab="Componente 2", 
+     pch=20,
+     col="blue")
+
+
+compo <- data.frame(Y1,Y2)
+var(compo)
+
+ggplot(compo) + aes(Y1,Y2) + geom_point()  +
+  expand_limits(x=c(-7,-2))  + expand_limits(y=c(-2,0)) +
+  theme_bw()
+
+t(vectors) %*% vectors    # W es una matriz ortogonal
+
+vectors %*% t(vectors)
+
+t(vectors) %*% cov %*% vectors   # Wt Cov(X) W = Cov(Y)

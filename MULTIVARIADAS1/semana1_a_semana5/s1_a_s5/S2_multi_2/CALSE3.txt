@@ -1,0 +1,170 @@
+###AQUI ESTAMOS ASUMIENDO QUE ESTAMOS MIDIENDO LAS VARIABLES EN UNA 
+###ESCALA DE INTERVALO Y DE RAZON
+library(rgl)
+library(carData)
+library(car)
+library(ggplot2)
+library(magick)
+library(scatterplot3d)
+library(FactoMineR)
+library(factoextra)
+library(pacman)
+p_load("MASS", "ca", "anacor","FactoMineR","vegan",
+       "gplots","vcd","graphics", "factoextra","foreign","FactoClass")
+
+#setwd(dirname(rstudioapi::getActiveDocumentContext()$path))# Cambiar el directorio de trabajo
+#getwd()#ubicacion del directorio
+#rm(list = ls()) #limpiar las variables
+#dev.off()#limpia graficos
+#############################################
+##lectura_de_datos
+datos.acp=read.delim("hatco-acp.txt")
+##no considerar la primera columna 'id'
+datos.acp$id=NULL
+summary(datos.acp)
+##resumen
+library(dataMaid)
+makeCodebook(datos.acp,file="resumen")
+
+summary(datos.acp)
+#describe_la_data_FORMA1
+library(psych)
+psych::describe(datos.acp)
+#describe_la_data_FORMA2
+library(funModeling)      
+# Pablo Casas  
+# Libro Vivo de Ciencia de Datos
+# Udemy R tidyverse
+#Una vez cargado el paquete 'funModeling',usamos la funcion 'df_status'
+# Descripción de los datos
+df_status(datos.acp)
+
+# Descripción de las variables numéricas
+profiling_num(datos.acp)
+####################################################################
+####################################################################
+####################################################################
+####2. ANALISIS DE CORRELACION
+#--------------------------------------------------------------
+######Matriz de Variancia-Covariancia
+######
+cov(datos.acp)#EN LA DIAGONAL ESTA LA VARIANZA DE CADA VARIABLE
+diag(cov(datos.acp))
+sum(diag(cov(datos.acp)))#VARIABILIDAD TOTAL QUE QUIERO EXPLICAR
+#ESTA ES LA VARIABILIDAD QUE QUISIERA EXPLICAR USANDO 
+#ANALISIS DE COMPONENTES PRINCIPALES.
+##### Otra forma 
+#####
+library(matrixcalc)
+matrix.trace(cov(datos.acp))   
+
+#--------------------------------------------------------------
+# Coeficientes de Correlación 
+cor(datos.acp)
+#Si hay dependencia entre las variables.
+# Prueba estadística
+library(psych)
+corr.test(datos.acp)
+
+#--------------------------------------------------------------
+# Gráficos de Correlación
+
+# Primera forma
+pairs(datos.acp)
+
+# Segunda forma
+library(car)
+scatterplotMatrix(datos.acp)
+#scatterplotMatrix(datos.acp, diagonal = "none")
+#scatterplotMatrix(datos.acp, diagonal = list(method='histogram'))
+scatterplotMatrix(datos.acp, diagonal = list(method="boxplot"))
+#scatterplotMatrix(datos.acp, diagonal = list(method= "density"))
+
+# Tercera forma
+library(PerformanceAnalytics)
+chart.Correlation(datos.acp, histogram=TRUE, pch=20)
+# Cuarta forma 
+library(psych)
+pairs.panels(datos.acp, 
+             pch=20,
+             stars=TRUE,
+             main="Gráfico de Correlación")
+
+# Quinta forma
+library(GGally)
+ggpairs(datos.acp)
+
+# Mapas de Calor
+library(psych)
+cor.plot(cor(datos.acp),
+         main="Mapa de Calor", numbers= F,
+         diag=TRUE, upper= F,
+         show.legend = TRUE)       
+
+library(GGally)
+ggcorr(datos.acp)
+
+# Crear directamente la tabla de correlaciones en APA en 
+# formato Word
+library(apaTables)
+apa.cor.table(datos.acp, 
+              filename = "Matriz de Correlaciones.doc", 
+              table.number = 2,
+              show.conf.interval = FALSE, 
+              landscape = TRUE)
+
+
+# Red de correlaciones
+library(corrr)
+cor <- correlate(datos.acp) ; cor 
+network_plot(cor,min_cor = 0.5)
+#EL ANTERIOR CODIGO ES UN ADELANTO
+#DE CUANTOS COMPONENTES PRINCIPALES
+#TENDRE,POR DEFECTO ASUME LA CORRELACION EN 0.3
+##################################################
+##################################################
+##################################################
+#########Identificando predictores correlacionados
+##################################################
+#cuando se trabaja con una 'regresion lineal' o 
+#con un 'regresion logistica' es necesario 
+#identificar los predictores que estan correlacionados
+#para ver que hacer.
+###############################################
+###############REGRESION-MULTIPLE##############
+###############################################
+#en la 'regresion multiple' es necesario que las variables
+#predictoras no esten correlacionados
+descrCor <- cor(datos.acp)
+descrCor
+class(descrCor)
+#aqui puedo observar que las variables 'x4' y 'x5' estan
+#altamente correlacionadas,pero nosotros debemos identifar
+#'quienes son las variables que generan eso.
+summary(descrCor[upper.tri(descrCor)])
+
+library(caret)#mineria_de_datos
+#clasificacion y entrenamiento de algoritmos de 
+#clasificacion y regresion.
+altaCorr <- findCorrelation(descrCor, cutoff = 0.50,  names=TRUE)
+##NOTA: 'cutoff' hace referencia al coeficiente de correlacion
+####### queda ami criterio.
+altaCorr
+#las variables que hacen que la variable 'x4' y 'x5' esten correlacionadas son
+#las variables 'x3' y 'x4'(afecta a todo el sistema,ejemplo 'x4' y 'x5' es un caso)
+descrCor2 <- cor(datos.acp[,-c(3,4)])
+summary(descrCor2[upper.tri(descrCor2)])
+
+altaCorr2 <- findCorrelation(descrCor2, cutoff = .50, names=TRUE)
+altaCorr2
+###############################################################################
+###############################################################################
+###EN EL MODELO DE REGRESION MULTIPLE SE ELIMINA LA VARIABLE 'X3' Y 'X4'#######
+###############################################################################
+##################EN EL MODELO ANALISIS DE COMPONENTES PRINCIPALES NO ELIMINO
+##################LAS VARIABLES 'X3' Y 'X4' MAS BIEN LAS JUNTO Y LO TRANSFORMO
+##################EN NUEVOS COMPONENTES PRINCIPALES,AHI ME GARANTIZA QUE YA NO 
+################## ESTAN CORRELACIONADOS.
+##############################################################################
+#RECORDAR QUE EL OBJETIVO ERA IDENTIFICAR LAS VARIABLES CORRELACIONADAS Y TRABAJAR 
+#CON ELLAS UNA VEZ TRANSFORMADA(COMPONENTES)

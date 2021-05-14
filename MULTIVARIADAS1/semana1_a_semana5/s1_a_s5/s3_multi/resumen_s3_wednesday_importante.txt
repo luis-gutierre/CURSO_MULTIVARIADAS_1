@@ -1,0 +1,61 @@
+
+datos.acp <- read.delim("hatco-acp.txt")
+str(datos.acp)
+# No considerar la primera columna Id
+datos.acp$id <- NULL
+str(datos.acp)
+###
+library(ade4)
+acp <- dudi.pca(datos.acp,           # datos.s , scale = F
+                scannf=FALSE, #presentacion
+                scale=T, center = T,   # Matriz de Correlación
+                nf=ncol(datos.acp))
+#########################################################################
+###########CON_EL_CRITERIO_DEL_LA_MEDIA#CON_ELCRITERIO_RETENCION_DE_VARIABLES
+###########CON_EL CRITERIO_DE_VARAIBILIDAD#
+inertia(acp)
+acp$eig
+acp$co
+#####
+#######################################criterio de la media aritmetica
+######################################################################
+# Segunda forma
+library(ggplot2)
+ggplot(as.data.frame(acp$eig)) + 
+  aes(x=seq(1:6),acp$eig) + 
+  geom_point(color="red") + geom_line() + theme_bw() +
+  scale_x_continuous(breaks=seq(1:6)) +
+  labs(title="Scree-Plot",
+       x= "Componentes",
+       y= "Autovalor") +
+  geom_hline(yintercept = 1,lty=2,color="blue")
+######################la grafica de circuferencia mas recomendable######
+#es decir mientras mas cercano a la linea circuferencia la correlacion
+#es mas cercano a 1,mientras la flecha sea mas pequeña la correlacion es
+#pequeña.
+library(FactoClass)
+plotcc(acp$co)#correlaciones
+#############################################################
+#############################################################
+#############################################################
+#############################################################
+#contribucion de los componentes principales a las variables
+contrib=acp$co*acp$co
+contrib
+0.3932577+ 0.264320512#contribucion de los componentes a x1
+#0.6575782*100=65.7% de la variabilidad de x1 esta siendo 
+#explicada por los dos primeros componentes.
+#   Comp1       Comp2
+#x1 0.3932577 0.264320512
+#x2 0.5754270 0.004618582
+#x3 0.5328840 0.112740154
+#x4 0.2439419 0.637722996
+#x5 0.1800619 0.692160355
+#x6 0.5875442 0.028054115
+################PARA UNA MEJOR VISUALIZACION#################
+contrib=as.matrix(contrib)#necesitamos llevarlo a una matrix
+#############################################################
+library(corrplot)
+corrplot(contrib,is.corr = FALSE,addCoef.col = T)
+#######################################
+#######################################

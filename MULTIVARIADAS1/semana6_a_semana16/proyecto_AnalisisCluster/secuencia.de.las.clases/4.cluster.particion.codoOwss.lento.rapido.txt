@@ -1,0 +1,127 @@
+####################################### 
+#CLUSTER PARTICION               ######PROPONES EL NUMERO DE CLUSTER.
+#######################################
+#-----------------------------------------------------------------------------------
+
+NO ESTANDAARIZO PORQUE MIS VARIABLES ESTAN EN UNA ESCALA DE 1-7
+
+#Si deseamos estandarizar
+#datos.s <- as.data.frame(scale(datosc))#datos originales#estan en la misma escala 1-7
+
+library(foreign)
+datosc <- read.spss("compras-cluster.sav",
+                    use.value.labels=TRUE, 
+                    max.value.labels=TRUE,
+                    to.data.frame=TRUE)
+
+attr(datosc,"variable.labels") <- NULL
+datosc$caso <- NULL
+str(datosc)
+
+
+
+
+
+
+# 1.1. Usando la función fviz_nbclust() del paquete factoextra  # pocos datos
+
+###################
+#ALGORITMO K-MEANS#
+###################
+
+
+#############################################
+#CRITERIO DE SUMA DE CUADRADOS INTRA < > WSS#
+#############################################
+
+##################################EJECUCION LENTA######################################
+library(factoextra)
+library(tictoc)  # system.time()
+tic()
+set.seed(123)
+fviz_nbclust(datosc, kmeans, method = "wss") +
+  geom_vline(xintercept = 3, linetype = 2) +
+  labs(subtitle = "Método Elbow")
+toc()
+
+#Se puede observar en la grafica que con 1 cluster suma de cuadrados intra es maximo 
+#luego la suma de cuadrados va decreciendo a manera que que aumenta el numero de cluster
+#hasta que el numero cluster es igual numero de individuos y ahi la suma de cuadrados intra
+#es igual a cero.
+
+#nota:cuando tengas muchos individuos no se aprecia muy bien en la grafica.(ejemplo:5000 mil inidividuos)
+
+
+####################################EJECUCION RAPIDA#####################################
+
+#vamos hacer el mismo grafico anterior pero usando "r basico" combinado  con ggplot2
+
+# 1.2. Usando la función kmeans() # se recomienda # muchos datos 
+tic()
+set.seed(123)
+wss <- numeric()
+for(h in 1:10){
+  b<-kmeans(datosc,h)#h puede ser h=1 1cluster hasta h=10 10 cluster ,numero de cluster=k o hiperparametros(le doy a priori, le doy como investigador el numero de cluster)
+  wss[h]<-b$tot.withinss# "tot.withinss" suma de cuadrados intra cluster(dentro del cluster)
+ }
+wss#suma de cuadrados intra 
+#decreciente:
+
+#334.66667 177.55556  89.88889  78.98889  67.50000  55.30556  40.75000  35.58333  30.31667  24.50000
+
+
+
+#representarlo en un grafico:  
+
+#requisito : convertirlo en un data.frame
+wss1 <- data.frame(cluster=c(1:10),wss)
+wss1
+
+#   cluster       wss
+#1        1 334.66667
+#2        2 177.55556
+#3        3  89.88889
+#4        4  78.98889
+#5        5  67.50000
+#6        6  55.30556
+#7        7  40.75000
+#8        8  35.58333
+#9        9  30.31667
+#10      10  24.50000
+
+#---------------------------------------------------------------------------------
+
+#1.3 representa la misma grafica que en el punto "1.1", es mas eficiente 
+#porque se ejecuta en menor tiempo(ejemplo: 5000 mil individuos,mas rapido)
+
+library(ggplot2)
+tic()
+ggplot(wss1) + aes(cluster,wss) + geom_line(color="blue") + 
+  geom_point(color="blue") +
+  geom_vline(xintercept = 3, linetype = 2,col="red") +
+  labs(title = "Método Elbow") + 
+  scale_x_continuous(breaks=1:10) + 
+  theme_classic()
+toc()
+
+#la solucion es con 3 cluster  o 3 k-means(codo, inflexion).
+
+
+
+
+######################
+#FORMA DE AUTOMATIZAR#
+######################
+
+library(tictoc)
+elbow <- function(k) {
+  set.seed(123)
+  fviz_nbclust(datosc, kmeans, method = "wss",k.max=k) +
+    geom_vline(xintercept = 3, linetype = 2) +
+    labs(subtitle = "Método Elbow")
+}
+
+elbow(8)
+
+#21 individuos, es decir hay 20 estapas(hay 20 suma de cuadrados intra y eso es porque el ultimo su
+#suma cuadrados es igual a 0) 

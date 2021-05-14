@@ -1,0 +1,168 @@
+p_load(rela, psych, ade4,GGally,PerformanceAnalytics)
+# Lectura de datos con 7 variables
+datos <- read.delim("hatco-factorial.txt")
+str(datos)
+# x7 : Servicio
+
+# No considerar la primera columna Id
+datos$id <- NULL
+str(datos)
+
+############################################
+# 2. Análisis Exploratorio con 7 variables #                                       #
+############################################
+
+# Análisis Descriptivo y Análisis de Correlación
+library(psych)
+describe(datos)
+cor(datos)
+
+corr.test(datos)
+
+library(PerformanceAnalytics)
+chart.Correlation(datos, histogram=TRUE, pch=20)
+
+library(psych)
+cor.plot(cor(datos),
+         main="Mapa de Calor", 
+         diag=F,number=F,
+         show.legend = T)  
+
+library(dataMaid)
+makeCodebook(datos,file="datosfactorial")
+
+# Prueba de Esfericidad de Bartlett
+library(rela)
+options(scipen=0)  # scipen = 999 Eliminan la notación científica
+cortest.bartlett(cor(datos),n=nrow(datos))
+# La matriz de correlación difiere de la matriz Identidad
+
+# Indicador Kaiser-Meyer-Olkinn KMO y MSA 
+KMO(datos)
+
+# Overall MSA =  0.45 <- KMO
+#########################################################
+#########################################################
+# Lectura de datos con 6 variables
+datos <- read.delim("hatco-factorial.txt")
+str(datos)
+
+# No considerar la primera columna Id ni la última variable X7
+datos$id <- NULL
+datos$x7 <- NULL
+datos.facto <- datos
+str(datos.facto)
+
+# Analisis descriptivo y Analisis de Correlacion
+library(psych)
+describe(datos.facto)
+cor(datos.facto)
+
+corr.test(datos.facto)
+
+library(PerformanceAnalytics)
+chart.Correlation(datos.facto, histogram=TRUE, pch=20)
+
+library(psych)
+cor.plot(cor(datos.facto),
+         main="Mapa de Calor", 
+         diag=F,number=F,
+         show.legend = T)  
+
+# Prueba de Esfericidad de Bartlett
+library(rela)
+cortest.bartlett(cor(datos.facto),n=nrow(datos.facto))
+
+# Indicador Kaiser-Meyer-Olkinn KMO y MSA 
+KMO(datos.facto)
+##########################################
+##########################################
+library(psych)
+facto.sin.rota <- principal(r=datos.facto,
+                            nfactors=2, covar = F,
+                            rotate="none")
+str(facto.sin.rota)
+
+# Autovalores
+facto.sin.rota$values
+###
+###
+###
+eig.val <- as.data.frame(facto.sin.rota$values)
+library(ggplot2)
+ggplot(eig.val) + aes(x=seq(1:6),y=facto.sin.rota$values) +
+  geom_point(color="red") +
+  scale_x_continuous(breaks=seq(1:6)) +
+  labs(title="Scree-Plot",
+       x= "Componentes",
+       y= "Autovalor") +
+    geom_col(fill="white",
+           col="black") +
+  geom_line() + 
+  geom_hline(yintercept = 1,lty=2,color="blue") +
+  geom_text(aes(label=round(facto.sin.rota$values,2) ), vjust=1.5,color="black") +
+  theme_bw()
+##########################
+##########################
+65.76% de la variabilidad de X1 está explicada por los factores comunes
+##########################
+#########################
+(100-65.76)%, %  de la variabilidad de X1 está explicada por la misma variables o por su factor específico
+###
+###
+###
+facto.sin.rota$uniquenesses    
+
+# Cargas Factoriales, Correlaciones Factor, Variable
+facto.sin.rota$loadings               
+
+#     PC1    PC2   
+# x1 -0.627  0.514  #0.657**2 + 0.514**2 = Comunalidad
+# x2  0.759       
+# x3 -0.730  0.336
+# x4  0.494  0.799
+# x5  0.424  0.832
+# x6  0.767 -0.167
+
+# (-0.627, 0.514)  -> Cargas Factoriales (lij) 
+#                     Correlaciones entre X y F
+# 0,658 = 65,8% de la variabilidad de X1 es explicada 
+#               por los factores comunes (F1, F2)
+
+# Gráfica de circulo de correlaciones
+library(ade4)
+load.sin.rota <- facto.sin.rota$loadings[,1:2]
+s.corcircle(load.sin.rota,grid=FALSE)
+####
+####
+facto.sin.rota$uniquenesses    
+
+# Cargas Factoriales, Correlaciones Factor, Variable
+facto.sin.rota$loadings               
+
+#     PC1    PC2   
+# x1 -0.627  0.514  #0.657**2 + 0.514**2 = Comunalidad
+# x2  0.759       
+# x3 -0.730  0.336
+# x4  0.494  0.799
+# x5  0.424  0.832
+# x6  0.767 -0.167
+
+# (-0.627, 0.514)  -> Cargas Factoriales (lij) 
+#                     Correlaciones entre X y F
+# 0,658 = 65,8% de la variabilidad de X1 es explicada 
+#               por los factores comunes (F1, F2)
+
+# Gráfica de circulo de correlaciones
+library(ade4)
+load.sin.rota <- facto.sin.rota$loadings[,1:2]
+s.corcircle(load.sin.rota,grid=FALSE)
+######
+######
+# X1 = 0.627F1 + 0.514F2 + e1
+#  .
+# X6 = 0.767F1 - 0.167F2 + e6
+Trabajo Grupales
+2 aplicaciones ACP, AF, Cluster, ACS, Discriminante
+Tesis, trabajos de investigación con datos
+5 años

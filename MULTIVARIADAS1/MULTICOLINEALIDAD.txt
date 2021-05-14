@@ -1,0 +1,23 @@
+library(carData)
+library(car)
+attach(data1)
+lm1<-lm(Y~.,data=data1)
+options(scipen = 9990) 
+vif(lm1)
+#############################
+
+acp1$c1       autovectores
+acp1$loadgins autovectores
+
+#############################
+ UNA MATRIZ 
+
+
+Verdadero, el determinante de una matriz puede ser negativo, positivo o igual a cero.
+
+
+El determinante de una matriz: puede tomar valores 
+positivos, negativos, o iguales a cero, 
+si la matriz es singular entonces el determinante es igual a cero
+
+############################

@@ -1,0 +1,595 @@
+---
+title: "CALIDAD DEL AGUA DEL RIO RIMAC"
+author: "EQUIPO 3"
+date: "31/3/2021"
+output:
+  html_document:
+    df_print: paged
+  linkcolor: blue
+  pdf_document: default
+  urlcolor: blue
+---
+
+
+
+**UNIVERSIDAD NACIONAL AGRARIA LA MOLINA**
+
+
+
+
+Table: table
+
+  **PROFESOR: JESUS SALINAS** |  **FACULTAD EYP** | 
+   ----------------------| ----------------------|
+ ![](D:/OTROS/FOTOS/unalm.jpg){width=20%} | ![](D:/OTROS/FOTOS/facu.jpg){width=15%}
+
+
+**INTEGRANTES**
+
+LUIS EDGAR GUTIERREZ SALDANA
+
+CHRISTIAN CRUZATE 
+
+JENNY MONTOYA
+
+![](D:/OTROS/FOTOS/machine.jpg)
+
+
+# 2.OBJETIVOS {-}
+El objetivo principal de este estudio es determinar patrones de variación temporal de
+la calidad de agua en el sector de la bocatoma de La Atarjea, Río Rímac.
+Los objetivos específicos son:
+
+1)  Identificar patrones temporales de variación de la calidad de agua.
+
+2)  Examinar la variación temporal de cada uno de los parámetros de la calidad de agua.
+
+3)  Identificar los parámetros de calidad de agua más importantes o relevantes.
+
+4)  Identificar relaciones entre parámetros de calidad de agua.
+
+
+# 3.APLICANDO CLUSTER JERARQUICO {-}
+
+***AGRUPAMIENTO DE MESES(INDIVIDUOS)***
+
+```{r}
+library(readxl)
+datosc <- read_excel("data_media.xlsx")
+
+```
+
+Estructura:
+Tenemos 24 variables de formato numerico  y 1 variable en formato character(meses)
+```{r}
+str(datosc)
+```
+Convirtiendo en un dataframe:
+```{r}
+datosc=as.data.frame(datosc)
+```
+
+```{r}
+rownames(datosc)<- datosc$meses
+```
+Eliminanos la variable meses(cualitativa)
+```{r}
+datosc$meses=NULL
+head(datosc,3)
+```
+**ANALISIS EXPLORATORIO**
+```{r}
+#Verificando si hay valores faltantes:
+#Detectando y graficando los % de datos perdidos
+#No hay valores perdidos en ninguna variable
+library(DataExplorer)
+library(ggplot2)
+plot_missing(datosc,ggtheme=theme_minimal())
+```
+
+**ANALISIS DESCRIPTIVO**
+```{r}
+library(zoo)
+library(PerformanceAnalytics)
+library(xts)
+library(graphics)
+#pearson "escala de intervalo"#es mejor si el tamaño de muestra es mas grande.
+chart.Correlation(datosc, histogram=TRUE, method = c("pearson"), pch=20) 
+```
+
+
+Se observa que 22  variables  sus coeficientes correlacion de pearson es alto, es decir las variables 
+se encuentran altamente correlacionados excepto   las variables (PH) y oxigeno disuelto(OD) 
+son las que tienen una menor correlacion de pearson,
+es decir estas ultimas variables se encuentran  poco correlacionados con las demas variables.
+
+En Analisis de componenetes principales buscamos que exista una alta correlacion entre las 
+variables para poder aplicar la tecnica multivariada no supervisada.
+
+
+
+
+
+```{r}
+#estandarizamos los datos porque las variables se encuentran en diferentes escalas
+ datosc <- as.data.frame(scale(datosc))
+```
+
+**CLUSTER JERARQUICO AGLOMERATIVO**
+
+Distancia euclidiana  y metodo de enlace Ward.D2
+
+```{r}
+
+
+#-----------------------------------
+#calculando la matriz de disimilaridad
+
+
+
+
+d <- dist(datosc, method = "euclidean")
+
+#el metodo ward.d2 ,para reconstruir la matriz distancia
+res.hc <- hclust(d, method = "ward.D2" ) 
+```
+
+```{r}
+res.hc$merge
+#formacion de "n" cluster hasta 1 cluster
+
+#observamos  que son 11 etapas:
+
+#En la etapa 1 
+#el individuo 10 y el individuo 11 forman un cluster
+
+#En la entapa 2
+#el individuo 8 y el individuo 9 forman un cluster
+
+#y asi sucesivamente hasta llegar a la etapa 11 donde se  
+#forma un solo  cluster
+```
+```{r}
+#estructura:
+str(res.hc)
+
+
+options(scipen = 999)#sin notacion cientifica
+ 
+```
+
+```{r}
+#distancia 
+ res.hc$height
+```
+
+**EL NUMERO DE CLUSTER**
+```{r}
+#Hemos considerado que un cambio brusco seria de la etapa 9
+#a la etapa 10,entonces el numero de cluster es 3
+library(ggplot2)
+alturas <- data.frame(etapa=1:11,distancia=res.hc$height)#distancia 
+alturas
+
+```
+```{r}
+#screeplot con las distancias
+
+ggplot(alturas) + aes(x=etapa,y=distancia)  +
+  geom_point() + geom_line()  + 
+  scale_x_continuous(breaks=seq(1,15)) + 
+  geom_vline(xintercept = 9,col="red",lty=2) + 
+  theme_bw() 
+```
+
+
+```{r}
+# Dividir en 3 clusters
+
+#La asignacion de cada elemento(mes) a cada cluster
+
+grp <- cutree(res.hc, k = 3)
+grp 
+#cluster1:
+#enero,mayo,octubre,noviembre y diciembre
+
+#cluster2:
+#febrero,marzo,abril
+
+#cluster3:
+#junio,julio,agosto,setiembre
+
+
+```
+
+**DEDONGRAMA**
+
+visualizacion de los 3 cluster:
+
+```{r}
+
+
+
+library(factoextra)
+fviz_dend(res.hc, k=3, cex = 0.5,
+          k_colors = rainbow(3),   # Colores del arco iris ES 3 POR LOS 3 CLUSTER
+          color_labels_by_k = TRUE, 
+          rect=T)
+
+
+
+
+```
+
+
+**CONCLUSION DEL DENDOGRAMA:**
+
+**estiage(fujo bajo del rio):**
+
+junio,julio,agosto y setiembre
+
+**transicion(incremento o disminucion del  flujo del rio):**
+
+octubre, noviembre , diciembre , enero y mayo
+
+**avenida(flujo alto de rio):**
+ 
+febrero, marzo y abril.
+
+En nuestro dendograma concluimos que los meses de transicion son 
+octubre, noviembre , diciembre , enero y mayo son meses que 
+esta en un ritmo de cambio o bien sube el nivel del agua del rio 
+o bien baja el nivel del agua del rio,es decir 
+para que el nivel del agua del rio sea de flujo alto(avenida),en los
+meses previos como enero,diciembre,noviembre,octubre tuvo que aumentar
+de poco a poco el nivel del agua hasta que febrero,marzo y abril 
+(periodo flujo del rio es alto),luego llegando al mes de mayo(mes de transicion) 
+comienza a disminuir el nivel del agua de rio rimac ,
+despues en los meses posteriores  junio,julio,agosto y setiembre 
+el nivel flujo del rio es bajo.
+
+**GRAFICA#ACP con CLUSTER**
+
+
+**GRAFICO 1** 
+```{r}
+
+
+#Se puede apreciar que con 2 componentes retenemos 83.8% de la inercia total
+library(factoextra)
+fviz_cluster(list(data = datosc, cluster = grp),
+             palette =c("#27E8E2", "#11DE56", "#ED6617") ,
+             ellipse.type = "convex", # Concentration ellipse
+             repel = T, # Avoid label overplotting (slow)
+             show.clust.cent = FALSE, ggtheme = theme_bw())
+```
+
+
+
+**Insumo para un modelo predictivo como regresion lineal**
+
+```{r}
+# Juntando el archivo de "datos" con la columna de "cluster"
+datos.j <- cbind(datosc,grp)
+ 
+```
+
+```{r}
+# Diagrama de lineas de promedios por cluster
+
+library(dplyr)
+datos.j %>%                                                     
+  group_by(grp) %>%                                     #group by       :obtengo  todo lo que quiero     ->filtro
+  summarise_all(list(mean)) -> medias                   #summarise_all  :obtengo todo lo que quiero      ->filtro  "all"  refiere a "todo"
+medias       
+#3*25
+```
+
+
+```{r}
+
+#forma1:
+datos.j %>%  summarise_if(is.numeric,mean) %>%         #sumarise_if  :obtengo un resumen condicionado
+  round(4) -> general
+general
+#1*25
+```
+
+```{r}
+#forma2:
+datos.j %>% select(-grp) %>%                          #como un sql
+  summarise_all(list(mean)) -> general
+general  #1*24
+```
+
+```{r}
+general <- cbind(grp="general",general)
+general#1*25
+```
+
+
+```{r}
+#uniendo "medias" y "general" (filas) y al mismo tiempo conviertiendo en un "data.frame"
+medias  <- as.data.frame(rbind(medias,general))
+medias  
+#4*25
+```
+
+
+```{r}
+
+library(tidyr)
+gathered_datos.j <- gather(data  = medias,
+                           -grp,                       #pasame todas las variables(columnas) a filas  excepto la varible "grp"
+                           key   = variable, 
+                           value = valor) 
+
+gathered_datos.j
+#72*3
+```
+
+```{r}
+library(ggplot2)
+
+
+ggplot(gathered_datos.j) + aes(x=variable,y=valor,color=grp) + 
+  geom_point() + geom_line(aes(group = grp)) +
+  theme_bw() +
+  theme(legend.position = "bottom",legend.title=element_blank()) +
+  labs(title="Diagrama de líneas de Cluster por Variable",
+       x="Variable",y="") + ylim(-3,4) +
+  scale_colour_discrete("Cluster") 
+#observaciones:
+# de los 3 cluster , se puede observar :
+#
+#que por cada cluster hay ciertas variables que son importantes, por ejemplo en el cluster(2) color verde
+#CLUSTER2
+#(lo mas altos,representativos)
+#Al,As,Caud,Cd,cote,coto,Cu,Fe,Mu,Pb,temp,turb,Zn
+#CLUSTER1
+#CLUSTER3
+```
+
+```{r}
+#convirtiendo en factor la varaible "grp" 
+datos.j$grp <- factor(datos.j$grp)
+
+#Si deseamos exportar :
+# write.csv(datos.j,"Compras con Jerarquico Aglomerativo.csv")
+```
+
+**Analisis de componenentes principales:**
+
+En las variables(24)
+
+ANALISIS EXPLORATORIO :
+```{r}
+library(GGally)
+ggcorr(datosc)
+
+#Se puede observar  que entre las 24 variables, 
+#hay correlaciones muy altas , correlaciones altas  y correlaciones medias.
+#esto podria traer problemas de multicolinealidad.
+```
+
+
+
+
+**3.2Análisis de Componentes Principales con el paquete ade4**
+
+CORROBORANDO LA **GRAFICA 1**
+
+¿se podra explicar con 2 componentes todas las 24 variables ?
+
+vamos a comprobar:
+
+En el **Grafico 1**, se podia apreciar que  
+con 2 componentes(retiene 83.8% de la inercia total) 
+se podria explicar   todas las 24 variables. 
+
+**¿Cuantos componentes?**
+```{r}
+
+library(ade4)
+
+acp <- dudi.pca(datosc,scannf=FALSE,nf=ncol(datosc)) 
+summary(acp) 
+```
+**- Podemos observar que con 2 componenetes retenemos 83.79 % de la inercia total**
+
+- Podemos observar que con 3 componenetes retenemos 89.49 % de la inercia total
+
+- Podemos observar que con 4 componenetes retenemos 93.32 % de la inercia total
+
+- Podemos observar que con 5 componenetes retenemos 95.73 % de la inercia total
+
+
+
+
+
+**CRITERIO DE LA MEDIA**
+
+```{r}
+# Valores propios
+
+#el criterio de la media:
+acp$eig 
+#estamos trabajando con la matriz correlacion cada variable deberia retener  
+#1% de la inercia total , nos podemos quedar hasta  con 3 componenetes(89.49% inercia total) 
+#pero tambien con 2 componentes se retiene  83.79% (inercia total)
+
+```
+
+
+```{r}
+# Grafica de Valores propios - ScreePlot
+
+#El primer componente retiene 74% de la inercia total
+#El segundo componete retiene 9.8% de la inercia total
+#El tercer componente retiene 5.7% de la inercia total
+fviz_eig(acp, addlabels=TRUE, hjust = -0.3,
+         barfill="white", barcolor ="darkblue",
+         linecolor ="red") + ylim(0,80) + theme_minimal() 
+```
+
+**Conclusion:**
+
+Con 2 componentes podemos explicar todas las 24 variables reteniendo 83.79%  % de la inercia total
+
+```{r}
+#Por eso que en  la GRAFICA 1 , la agrupacion de los meses  en 3  cluster 
+#se explica   83.79% (inercia total).
+inertia.dudi(acp)
+```
+**ANALISIS DE COMPONENTES PRINCIPALES**
+
+Con 2  componentes principales
+
+```{r}
+
+acp <- dudi.pca(datosc,scannf=FALSE,nf=2) 
+summary(acp) 
+```
+
+¿Como estan agrupadas las variables?
+
+Nos basamos del criterio de las correlaciones 
+
+
+```{r}
+# Correlaciones entre las variables y los componentes
+
+
+#acp$c1 vectores propios
+acp$co[c(1,2)] 
+
+
+```
+
+
+
+
+**componente1:#FACTORES DE NO AIREACION**
+
+
+caudal
+temp
+Turb
+CE
+SD
+Akal
+Di
+Cls
+so
+NO3
+NO2
+PO
+Cu
+Al
+Fe
+Mu
+Pb
+Cd
+Zn
+As
+Colo
+Cole
+
+
+
+
+**componente2:# FACTORES DE AIREACION**
+
+
+OD
+pH
+
+
+Un análisis realizados en los tanques de aireación para asegurar condiciones ideales, 
+los dos parámetros más importantes son el pH y el oxígeno disuelto (OD)
+El pH en tanques de aireación debe estar entre 
+6.5 a 8.5 para evitar el estrés en las colonias microbianas, y permitirles una actividad
+
+https://www.hannacolombia.com/aqua/blog/item/midiendo-ph-y-od-en-tanques-de-aireacion-de-aguas-residuales#:~:text=Adem%C#3%A1s%20de%20una%20variedad%20de,microbianas%2C%20y%20permitirles%20una%20actividad
+
+
+
+**GRAFICA 2**
+
+```{r}
+
+library(factoextra)
+fviz_pca_var(acp, col.var="steelblue")+theme_minimal()
+
+#podemos observar que todos las variables  estan asociados mas a la  dimension1(componente1),
+#excepto las variables "pH" y "OD" que pertenecen a  la dimension2(componente2) pero 
+#con la matriz de correlacion ya determinamos la variable "pH" y "OD" pertenece a la dimension2.
+ 
+```
+
+
+**VARIABLES DE AIRIACION (PH Y OD )**,a medida que aumenta la  variable "PH" de manera inversamente
+proporcional la  variable "OD" disminuye (estan muy relacionados).
+
+**VARIABLES DE NO AIRIACION**, a medida que aumentan las variables(caudal,temperatura(temp),turbidez(Turb),
+cobre(Cu),aluminio(Al),Hierro(Fe),Manganeso(Mn),Plomo(Pb),cadmio(Cd),Zinc(Zn),Arsenico(As),
+Coliformes totales(CoTo),Coliformes termotolerables(Cote) de forma inversamente proporcional disminuye 
+las variables(Coductividad electrica(CE),Solidos Disuelto(SD),Alcalinidad(Akal),Dureza total(DI),cloruros(cls)
+,sulfatos(so),nitratos(NO3),nitritos(NO2),fosfatos(PO))
+
+
+**Por ejemplo con la variable "Alcalinidad(Akal)"**
+
+Una alta alcalinidad(Akal)
+
+**por ejemplo** a una alta alcalinidad(Akal) tambien afectara 
+de manera directa a las variables  (Coductividad electrica(CE),Solidos Disuelto(SD)
+,Dureza total(DI),cloruros(cls),sulfatos(so),nitratos(NO3),nitritos(NO2),fosfatos(PO)) 
+y tambien afectara de manera inversamente inversamente proporcional a las variables 
+(caudal,temperatura(temp),turbidez(Turb),cobre(Cu),aluminio(Al),Hierro(Fe),Manganeso(Mn),
+Plomo(Pb),cadmio(Cd),Zinc(Zn),Arsenico(As),Coliformes totales(CoTo),Coliformes termotolerables(Cote) .
+
+
+¿Si aumenta la cantidad de plomo(Pb) en el rio rimac ,afectara sobre en la Alcalinidad(AKal) ?
+
+Si aumenta la concentracion de plomo(Pb) afectara a la Alcalinidad(Akal) de manera negativa 
+es decir disminuye la  concentracion de alcalinidad.
+```{r}
+
+#biplot
+
+library(factoextra)
+fviz_pca_biplot(acp, repel = F,
+                col.var = "steelblue",
+                col.ind = "black" )
+```
+
+Los meses febrero,marzo  ,abril que corresponde a la estacion de "avenida" esta asociada a la caudal
+temperatura,turb,Cu,Fe,Mn,Pb,As,cote y coto.
+Los meses octubre,noviembre,diciembre , enero y mayo que corresponde a la estacion de "transicion" esta asociada Ph,Po,so de forma inversamente proporcional Zn,Cd y OD.
+Los meses junio, julio ,agosto ,setiembreque corresponde a la estacion de "estiage" esta asociado
+Ce,Sd,Akal,Di,Cls,NO3 Y NO2.
+
+
+**SCORES** 
+
+**Insumo para modelos predictivos como regresion lineal**
+
+
+```{r}
+# Scores o Puntuaciones de cada individuo
+
+#10 primeros
+acp$li[1:10,]
+
+
+```
+
+
+Practicamente no  estan correlacionados los 2 componentes (-0.00000000000000005023342)
+```{r}
+cor(acp$li)
+```
+
+
+
